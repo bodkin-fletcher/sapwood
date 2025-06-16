@@ -6,13 +6,20 @@ Integrating diverse nodes for streamlined automation and workflow management
 
 Sapwood is a fullstack web application that provides a visual interface for managing, connecting, and monitoring nodes, which can be any external services or APIs. It enables users to create workflows by connecting nodes, visualize data flows, and generate printable layouts. Built with modern technologies according to the standards outlined in Fletcher's Decree.
 
-## Features
+## Features (Sprint 1 - MVP)
 
-- **Node Management**: Create, configure, and visualize nodes with status indicators
-- **Workflow Creation**: Connect nodes to create automated data flows
-- **Data Wrangling**: Process and transform data between nodes
-- **Layout Generation**: Create SVG-based printable layouts
-- **Offline Support**: Zero-installs capability for offline development
+- **Node Creation & Management**: Create, edit, and delete nodes with a visual interface
+- **Node Visualization**: Display nodes as hexagons in an interactive canvas
+- **Node Connections**: Create connections between nodes
+- **Status Monitoring**: Basic status indicators for nodes
+- **Settings Management**: Configure application settings including theme and heartbeat interval
+- **Dark Mode**: Full dark mode support with a clean interface inspired by X (Twitter)
+
+## Upcoming Features
+
+- **Data Wrangling**: Process and transform data between nodes (Sprint 3)
+- **Layout Generation**: Create SVG-based printable layouts (Sprint 5)
+- **Advanced Node Management**: Enhanced monitoring and API integration (Sprint 4)
 
 ## Technology Stack
 

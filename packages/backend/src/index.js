@@ -3,6 +3,10 @@ import Fastify from 'fastify';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
+// Import route handlers
+import registerNodeRoutes from './routes/nodes.js';
+import registerSettingsRoutes from './routes/settings.js';
+
 // Workaround for __dirname in ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -13,25 +17,34 @@ const fastify = Fastify({
 });
 
 // Register CORS
-// Note: Using the @fastify/cors package instead of fastify-cors since the latter is deprecated
 await fastify.register(import('@fastify/cors'), {
   origin: true,
 });
 
-// Define routes
+// Register static file serving (for frontend in production)
+await fastify.register(import('@fastify/static'), {
+  root: path.join(__dirname, '..', '..', 'frontend', 'dist'),
+  prefix: '/',
+});
+
+// Register health check route
 fastify.get('/api/health', async (request, reply) => {
   return { status: 'ok', timestamp: new Date().toISOString() };
 });
 
-fastify.get('/api/nodes', async (request, reply) => {
-  // Placeholder for node data
-  return {
-    nodes: [
-      { id: 1, name: 'API Gateway', status: 'active', type: 'gateway' },
-      { id: 2, name: 'Database', status: 'active', type: 'storage' },
-      { id: 3, name: 'Processing', status: 'inactive', type: 'service' },
-    ]
-  };
+// Register route handlers
+await registerNodeRoutes(fastify);
+await registerSettingsRoutes(fastify);
+
+// Handle SPA routing - send all non-API requests to index.html
+fastify.setNotFoundHandler((request, reply) => {
+  // Only handle GET requests that don't start with /api
+  if (request.method === 'GET' && !request.url.startsWith('/api')) {
+    return reply.sendFile('index.html');
+  }
+  
+  // Default 404 handler
+  reply.code(404).send({ error: 'Not Found' });
 });
 
 // Start the server

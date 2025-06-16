@@ -1509,6 +1509,7 @@ const RAW_RUNTIME_STATE =
           ["eslint-plugin-react-refresh", "virtual:2cdc82d73789ee3c7acbb391ac418a2a582541ef264f73324633f520e8ca31b7749565da45351ef067c96134b36940acea65ed019495505afb9854a56a545447#npm:0.4.20"],\
           ["react", "npm:18.3.1"],\
           ["react-dom", "virtual:2cdc82d73789ee3c7acbb391ac418a2a582541ef264f73324633f520e8ca31b7749565da45351ef067c96134b36940acea65ed019495505afb9854a56a545447#npm:18.3.1"],\
+          ["react-router-dom", "virtual:2cdc82d73789ee3c7acbb391ac418a2a582541ef264f73324633f520e8ca31b7749565da45351ef067c96134b36940acea65ed019495505afb9854a56a545447#npm:7.6.2"],\
           ["vite", "virtual:2cdc82d73789ee3c7acbb391ac418a2a582541ef264f73324633f520e8ca31b7749565da45351ef067c96134b36940acea65ed019495505afb9854a56a545447#npm:5.4.19"]\
         ],\
         "linkType": "SOFT"\
@@ -2270,6 +2271,13 @@ const RAW_RUNTIME_STATE =
         "packageLocation": "./.yarn/cache/cookie-npm-0.7.2-6ea9ee4231-9596e8ccdb.zip/node_modules/cookie/",\
         "packageDependencies": [\
           ["cookie", "npm:0.7.2"]\
+        ],\
+        "linkType": "HARD"\
+      }],\
+      ["npm:1.0.2", {\
+        "packageLocation": "./.yarn/cache/cookie-npm-1.0.2-7a4273d897-fd25fe79e8.zip/node_modules/cookie/",\
+        "packageDependencies": [\
+          ["cookie", "npm:1.0.2"]\
         ],\
         "linkType": "HARD"\
       }]\
@@ -4999,6 +5007,61 @@ const RAW_RUNTIME_STATE =
         "packageLocation": "./.yarn/cache/react-refresh-npm-0.17.0-85b5aa925e-002cba9403.zip/node_modules/react-refresh/",\
         "packageDependencies": [\
           ["react-refresh", "npm:0.17.0"]\
+        ],\
+        "linkType": "HARD"\
+      }]\
+    ]],\
+    ["react-router", [\
+      ["npm:7.6.2", {\
+        "packageLocation": "./.yarn/cache/react-router-npm-7.6.2-c79e3bd28f-c8ef65f2a3.zip/node_modules/react-router/",\
+        "packageDependencies": [\
+          ["react-router", "npm:7.6.2"]\
+        ],\
+        "linkType": "SOFT"\
+      }],\
+      ["virtual:afc7eb4157b4225f7eeeea1501dc3f6805563f4d056016c9826f2a72f84dceee77f116aa99defef9447f38840d093eb748be150cafb486bd2cdfe95a1a194bff#npm:7.6.2", {\
+        "packageLocation": "./.yarn/__virtual__/react-router-virtual-54087e4d97/0/cache/react-router-npm-7.6.2-c79e3bd28f-c8ef65f2a3.zip/node_modules/react-router/",\
+        "packageDependencies": [\
+          ["react-router", "virtual:afc7eb4157b4225f7eeeea1501dc3f6805563f4d056016c9826f2a72f84dceee77f116aa99defef9447f38840d093eb748be150cafb486bd2cdfe95a1a194bff#npm:7.6.2"],\
+          ["@types/react", "npm:18.3.23"],\
+          ["@types/react-dom", "virtual:2cdc82d73789ee3c7acbb391ac418a2a582541ef264f73324633f520e8ca31b7749565da45351ef067c96134b36940acea65ed019495505afb9854a56a545447#npm:18.3.7"],\
+          ["cookie", "npm:1.0.2"],\
+          ["react", "npm:18.3.1"],\
+          ["react-dom", "virtual:2cdc82d73789ee3c7acbb391ac418a2a582541ef264f73324633f520e8ca31b7749565da45351ef067c96134b36940acea65ed019495505afb9854a56a545447#npm:18.3.1"],\
+          ["set-cookie-parser", "npm:2.7.1"]\
+        ],\
+        "packagePeers": [\
+          "@types/react-dom",\
+          "@types/react",\
+          "react-dom",\
+          "react"\
+        ],\
+        "linkType": "HARD"\
+      }]\
+    ]],\
+    ["react-router-dom", [\
+      ["npm:7.6.2", {\
+        "packageLocation": "./.yarn/cache/react-router-dom-npm-7.6.2-b0b5af8822-9a8370333b.zip/node_modules/react-router-dom/",\
+        "packageDependencies": [\
+          ["react-router-dom", "npm:7.6.2"]\
+        ],\
+        "linkType": "SOFT"\
+      }],\
+      ["virtual:2cdc82d73789ee3c7acbb391ac418a2a582541ef264f73324633f520e8ca31b7749565da45351ef067c96134b36940acea65ed019495505afb9854a56a545447#npm:7.6.2", {\
+        "packageLocation": "./.yarn/__virtual__/react-router-dom-virtual-afc7eb4157/0/cache/react-router-dom-npm-7.6.2-b0b5af8822-9a8370333b.zip/node_modules/react-router-dom/",\
+        "packageDependencies": [\
+          ["react-router-dom", "virtual:2cdc82d73789ee3c7acbb391ac418a2a582541ef264f73324633f520e8ca31b7749565da45351ef067c96134b36940acea65ed019495505afb9854a56a545447#npm:7.6.2"],\
+          ["@types/react", "npm:18.3.23"],\
+          ["@types/react-dom", "virtual:2cdc82d73789ee3c7acbb391ac418a2a582541ef264f73324633f520e8ca31b7749565da45351ef067c96134b36940acea65ed019495505afb9854a56a545447#npm:18.3.7"],\
+          ["react", "npm:18.3.1"],\
+          ["react-dom", "virtual:2cdc82d73789ee3c7acbb391ac418a2a582541ef264f73324633f520e8ca31b7749565da45351ef067c96134b36940acea65ed019495505afb9854a56a545447#npm:18.3.1"],\
+          ["react-router", "virtual:afc7eb4157b4225f7eeeea1501dc3f6805563f4d056016c9826f2a72f84dceee77f116aa99defef9447f38840d093eb748be150cafb486bd2cdfe95a1a194bff#npm:7.6.2"]\
+        ],\
+        "packagePeers": [\
+          "@types/react-dom",\
+          "@types/react",\
+          "react-dom",\
+          "react"\
         ],\
         "linkType": "HARD"\
       }]\
