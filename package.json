@@ -1,0 +1,36 @@
+{
+  "name": "sapwood",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Integrating diverse nodes for streamlined automation",
+  "author": "",
+  "license": "UNLICENSED",
+  "packageManager": "yarn@4.5.2",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently \"yarn workspace @sapwood/backend dev\" \"yarn workspace @sapwood/frontend dev\"",
+    "build": "yarn workspace @sapwood/frontend build && yarn workspace @sapwood/backend build"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "engines": {
+    "node": "22.11.0"
+  },
+  "installConfig": {
+    "pnp": true,
+    "supportedArchitectures": {
+      "os": [
+        "win32",
+        "linux",
+        "darwin"
+      ],
+      "cpu": [
+        "x64",
+        "arm64"
+      ]
+    }
+  }
+}

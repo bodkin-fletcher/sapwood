@@ -1,0 +1,20 @@
+{
+  "name": "@sapwood/backend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "nodemon src/index.js",
+    "build": "if not exist dist mkdir dist && xcopy /E /I src dist",
+    "start": "node src/index.js"
+  },
+  "dependencies": {
+    "@fastify/cors": "^9.0.0",
+    "@fastify/static": "^7.0.0",
+    "fastify": "^4.28.1"
+  },
+  "devDependencies": {
+    "eslint": "^8.55.0",
+    "nodemon": "^3.1.10"
+  }
+}
