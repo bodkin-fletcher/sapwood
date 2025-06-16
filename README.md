@@ -69,3 +69,4 @@ sapwood/
 ## Documentation
 
 - [Project Scope & Features](./sapwood-scope.md)
+- [Development Roadmap](./roadmap.md) - Step-by-step plan for project completion
