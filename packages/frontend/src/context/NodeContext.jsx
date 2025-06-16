@@ -7,6 +7,7 @@ export const NodeProvider = ({ children }) => {
   const [nodes, setNodes] = useState([]);
   const [connections, setConnections] = useState([]);
   const [selectedNode, setSelectedNode] = useState(null);
+  const [selectedConnection, setSelectedConnection] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -54,6 +55,7 @@ export const NodeProvider = ({ children }) => {
       setLoading(false);
     }
   };
+  
   const updateNode = async (id, updates) => {
     setLoading(true);
     try {
@@ -105,10 +107,39 @@ export const NodeProvider = ({ children }) => {
       setLoading(false);
     }
   };
-
-  const addConnection = async (source, target) => {
+  
+  const executeNodeApi = async (id) => {
+    setLoading(true);
     try {
-      const newConnection = await nodeService.createConnection(source, target);
+      const result = await nodeService.executeNodeApi(id);
+      
+      // Update node status if the call was successful
+      if (result && result.success) {
+        const nodeToUpdate = nodes.find(n => n.id === id);
+        if (nodeToUpdate) {
+          await updateNode(id, { 
+            status: 'active',
+            lastApiExecution: new Date().toISOString()
+          });
+        }
+      }
+      
+      return result;
+    } catch (error) {
+      console.error('Error executing node API:', error);
+      setError('Failed to execute node API. Please try again later.');
+      return {
+        success: false,
+        error: error.message || 'An error occurred'
+      };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const addConnection = async (source, target, options = {}) => {
+    try {
+      const newConnection = await nodeService.createConnection(source, target, options);
       setConnections([...connections, newConnection]);
       return newConnection;
     } catch (error) {
@@ -118,10 +149,37 @@ export const NodeProvider = ({ children }) => {
     }
   };
 
+  const updateConnection = async (id, updates) => {
+    try {
+      const updatedConnection = await nodeService.updateConnection(id, updates);
+      
+      // Update local state
+      const updatedConnections = connections.map(conn => 
+        conn.id === id ? updatedConnection : conn
+      );
+      setConnections(updatedConnections);
+      
+      // Update selectedConnection if it's the one being edited
+      if (selectedConnection && selectedConnection.id === id) {
+        setSelectedConnection(updatedConnection);
+      }
+      return updatedConnection;
+    } catch (error) {
+      console.error('Error updating connection:', error);
+      setError('Failed to update connection. Please try again later.');
+      return null;
+    }
+  };
+
   const deleteConnection = async (connectionId) => {
     try {
       await nodeService.deleteConnection(connectionId);
       setConnections(connections.filter(conn => conn.id !== connectionId));
+      
+      // Clear selectedConnection if it's the one being deleted
+      if (selectedConnection && selectedConnection.id === connectionId) {
+        setSelectedConnection(null);
+      }
       return true;
     } catch (error) {
       console.error('Error deleting connection:', error);
@@ -130,19 +188,36 @@ export const NodeProvider = ({ children }) => {
     }
   };
 
+  const getConnectionById = (id) => {
+    return connections.find(conn => conn.id === id);
+  };
+
+  const getConnectionsBetweenNodes = (sourceId, targetId) => {
+    return connections.filter(conn => 
+      conn.source === sourceId && conn.target === targetId
+    );
+  };
+
   const value = {
     nodes,
     connections,
     selectedNode,
+    selectedConnection,
     loading,
     error,
     setSelectedNode,
+    setSelectedConnection,
     fetchNodes,
+    fetchConnections,
     addNode,
     updateNode,
     deleteNode,
+    executeNodeApi,
     addConnection,
-    deleteConnection
+    updateConnection,
+    deleteConnection,
+    getConnectionById,
+    getConnectionsBetweenNodes
   };
 
   return <NodeContext.Provider value={value}>{children}</NodeContext.Provider>;

@@ -97,6 +97,25 @@ export const nodeService = {
     }
   },
 
+  // Execute a node's API
+  async executeNodeApi(id) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/nodes/${id}/execute`, {
+        method: 'POST',
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Error: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error(`Error executing API for node ${id}:`, error);
+      throw error;
+    }
+  },
+
   // Get all connections
   async getAllConnections() {
     try {
@@ -112,9 +131,25 @@ export const nodeService = {
     }
   },
 
-  // Create a new connection
-  async createConnection(sourceId, targetId) {
+  // Get a specific connection by ID
+  async getConnectionById(id) {
     try {
+      const response = await fetch(`${API_BASE_URL}/connections/${id}`);
+      if (!response.ok) {
+        throw new Error(`Error: ${response.status}`);
+      }
+      const data = await response.json();
+      return data.connection;
+    } catch (error) {
+      console.error(`Error fetching connection ${id}:`, error);
+      throw error;
+    }
+  },
+
+  // Create a new connection
+  async createConnection(sourceId, targetId, options = {}) {
+    try {
+      const { label, type, description, properties } = options;
       const response = await fetch(`${API_BASE_URL}/connections`, {
         method: 'POST',
         headers: {
@@ -123,6 +158,10 @@ export const nodeService = {
         body: JSON.stringify({
           source: sourceId,
           target: targetId,
+          label,
+          type,
+          description,
+          properties
         }),
       });
       
@@ -134,6 +173,29 @@ export const nodeService = {
       return data.connection;
     } catch (error) {
       console.error('Error creating connection:', error);
+      throw error;
+    }
+  },
+
+  // Update a connection
+  async updateConnection(id, updates) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/connections/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updates),
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Error: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      return data.connection;
+    } catch (error) {
+      console.error(`Error updating connection ${id}:`, error);
       throw error;
     }
   },
