@@ -16,6 +16,7 @@ import { SettingsProvider } from './context/SettingsContext'
 import NodeDisplayPage from './pages/NodeDisplayPage'
 import SettingsPage from './pages/SettingsPage'
 import WelcomePage from './pages/WelcomePage'
+import DataWranglingPage from './pages/DataWranglingPage'
 
 const drawerWidth = 240;
 
@@ -129,16 +130,7 @@ function App() {
           <Route path="/" element={<WelcomePage />} />
           <Route path="/nodes" element={<NodeDisplayPage />} />
           <Route path="/settings" element={<SettingsPage />} />
-          <Route path="/data" element={
-            <Container>
-              <Typography variant="h4" gutterBottom>
-                Data Wrangling
-              </Typography>
-              <Typography variant="body1">
-                This feature will be implemented in Sprint 3.
-              </Typography>
-            </Container>
-          } />
+          <Route path="/data" element={<DataWranglingPage />} />
           <Route path="/layout" element={
             <Container>
               <Typography variant="h4" gutterBottom>

@@ -6,6 +6,7 @@ import { fileURLToPath } from 'url';
 // Import route handlers
 import registerNodeRoutes from './routes/nodes.js';
 import registerSettingsRoutes from './routes/settings.js';
+import registerDataRoutes from './routes/data.js';
 
 // Workaround for __dirname in ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -35,6 +36,7 @@ fastify.get('/api/health', async (request, reply) => {
 // Register route handlers
 await registerNodeRoutes(fastify);
 await registerSettingsRoutes(fastify);
+await registerDataRoutes(fastify);
 
 // Handle SPA routing - send all non-API requests to index.html
 fastify.setNotFoundHandler((request, reply) => {

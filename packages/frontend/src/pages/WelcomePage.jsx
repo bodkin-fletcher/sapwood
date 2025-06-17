@@ -47,8 +47,7 @@ const WelcomePage = () => {
           </Paper>
         </Grid>
 
-        <Grid item xs={12} md={6} lg={3}>
-          <Paper 
+        <Grid item xs={12} md={6} lg={3}>          <Paper 
             component={Link} 
             to="/data" 
             sx={{ 
@@ -59,8 +58,7 @@ const WelcomePage = () => {
               alignItems: 'center',
               textAlign: 'center',
               textDecoration: 'none',
-              color: 'text.secondary',
-              bgcolor: 'background.default',
+              color: 'text.primary',
               transition: 'transform 0.2s, box-shadow 0.2s',
               '&:hover': {
                 transform: 'translateY(-5px)',
@@ -68,16 +66,13 @@ const WelcomePage = () => {
               }
             }}
           >
-            <StorageIcon sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }} />
+            <StorageIcon sx={{ fontSize: 60, color: 'primary.main', mb: 2 }} />
             <Typography variant="h5" component="h2" gutterBottom>
               Data Wrangling
             </Typography>
             <Typography variant="body1">
-              Process and transform data between nodes (Coming in Sprint 3)
+              Process and transform data between nodes
             </Typography>
-            <Box sx={{ mt: 2 }}>
-              <Button variant="outlined" disabled>Coming Soon</Button>
-            </Box>
           </Paper>
         </Grid>
 
@@ -144,15 +139,14 @@ const WelcomePage = () => {
             </Typography>
           </Paper>
         </Grid>
-      </Grid>
-
-      <Box sx={{ mt: 8, mb: 4, textAlign: 'center' }}>
+      </Grid>      <Box sx={{ mt: 8, mb: 4, textAlign: 'center' }}>
         <Typography variant="h5" component="h3" gutterBottom>
-          Sprint 1 - MVP Complete
+          Sprint 3 - Data Wrangling Complete
         </Typography>
         <Typography variant="body1" color="text.secondary">
-          This version includes the basic node management and configuration capabilities.
-          Next sprints will add connection visualization, data wrangling, and more advanced features.
+          This version includes node management, connection visualization,
+          and data wrangling capabilities. You can now view, edit, transform, and validate data
+          flowing between nodes.
         </Typography>
       </Box>
     </Container>

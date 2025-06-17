@@ -1,7 +1,8 @@
 import { createContext, useState, useContext, useEffect } from 'react';
 import { nodeService } from '../services/api';
 
-const NodeContext = createContext();
+// Create and export the context
+export const NodeContext = createContext();
 
 export const NodeProvider = ({ children }) => {
   const [nodes, setNodes] = useState([]);

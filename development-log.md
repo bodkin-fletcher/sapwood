@@ -104,6 +104,70 @@ This document tracks key design decisions and architectural choices made during 
 3. **Accessibility**: Improved screen reader support and keyboard navigation
 4. **Documentation**: Inline code documentation and updated user guides
 
+## Sprint 3 - Data Wrangling Implementation (June 16, 2025)
+
+### Overview
+In Sprint 3, we've implemented the data wrangling capabilities as outlined in the roadmap. This allows users to view, edit, transform, and validate data flowing between nodes in the system. The implementation includes both frontend components and backend services to support these features.
+
+### Key Features Implemented
+
+1. **Data Visualization**:
+   - JSON viewer with collapsible tree structure
+   - Tabular data viewer for structured data
+   - CSV export capabilities
+
+2. **Data Editing**:
+   - Monaco-based code editor for JSON data
+   - Validation of edited data
+   - Save functionality for modified data
+
+3. **Data Transformation Tools**:
+   - Filter operations for data records
+   - Map functions to transform data structures
+   - Sort and group by operations
+   - Aggregation functions (sum, average, etc.)
+   - Custom JavaScript transformation support
+
+4. **Data Validation**:
+   - Schema validation for data consistency
+   - Data type checking for field values
+   - Required fields validation
+   - Value range checks for numeric fields
+   - Format validation for emails, dates, etc.
+
+5. **File-Based JSON Persistence**:
+   - Backend storage of node and connection data
+   - Save/load functionality for data states
+   - Persistent validation results
+
+### Technical Implementation
+
+#### Frontend
+- Created DataWranglingPage component as the main container
+- Implemented specialized components:
+  - DataViewer for various data visualization formats
+  - DataEditor with Monaco editor integration
+  - DataTransformer with various transformation options
+  - DataValidator with validation rules and result display
+- Added dataApi service for communication with backend
+
+#### Backend
+- Created data.js routes file with endpoints for:
+  - Data flow snapshot retrieval
+  - Node and connection data operations
+  - Data transformation processing
+  - Validation services
+  - CSV export functionality
+- Implemented file-based JSON persistence in the data directory
+
+### Next Steps
+- Enhance transformation capabilities with more operations
+- Add visualization capabilities for different data formats
+- Implement real-time updates for data changes
+- Integrate with external data sources
+
+The data wrangling features provide a solid foundation for users to work with data flowing through nodes, making Sapwood more functional and valuable as an integration tool.
+
 ## Conclusion
 
 Sapwood's design aims to balance visual simplicity with powerful functionality, allowing users to represent and interact with distributed systems in an intuitive way. The UI decisions prioritize clarity and usability, while the architectural choices focus on flexibility and maintainability.
