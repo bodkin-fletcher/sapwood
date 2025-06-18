@@ -39,7 +39,7 @@ export const toTgdfBasic = (value, type = null) => {
       else {
         return { text: value };
       }
-    } 
+    }
     else if (typeof value === 'number') {
       return { number: value.toString() };
     }
@@ -52,7 +52,7 @@ export const toTgdfBasic = (value, type = null) => {
     }
   } else {
     // Use the provided type
-    switch(type) {
+    switch (type) {
       case 'text':
         return { text: String(value) };
       case 'number':
@@ -88,13 +88,13 @@ const generateSimpleHash = (content) => {
   // This is just for demo purposes - in production, use a proper hashing library
   const contentString = JSON.stringify(content);
   let hash = 0;
-  
+
   for (let i = 0; i < contentString.length; i++) {
     const char = contentString.charCodeAt(i);
     hash = ((hash << 5) - hash) + char;
     hash = hash & hash; // Convert to 32bit integer
   }
-  
+
   // Convert to hex-like string
   const hexHash = Math.abs(hash).toString(16).padStart(16, '0');
   return hexHash;
@@ -111,9 +111,9 @@ export const toTgdfNode = (node) => {
     // Standard fields
     identityHash: node.id || uuidv4(),
     tokens: node.tags ? node.tags.map(tag => ({ text: tag })) : "no_tokens",
-    name: { flexname: `node_${node.name.toLowerCase().replace(/[^a-z0-9_]/g, '_')}` },
+    name: { flexname: `${node.name.toLowerCase().replace(/[^a-z0-9_]/g, '_')}` },
     created: { instant: node.created || new Date().toISOString() },
-    
+
     // Generic fields
     type: toTgdfBasic(node.type, 'flexname'),
     description: toTgdfBasic(node.description, 'text'),
@@ -126,14 +126,14 @@ export const toTgdfNode = (node) => {
 
   // Generate version
   const version = "v0.1.0";
-  
+
   // Generate hashes for integrity
   const integrity = {
     hashes: {
       sha256: generateSimpleHash(data)
     }
   };
-  
+
   // Return the complete node in TGDF format
   return {
     node: {
@@ -157,7 +157,7 @@ export const toTgdfConnection = (connection) => {
     tokens: connection.tags ? connection.tags.map(tag => ({ text: tag })) : "no_tokens",
     name: { flexname: `connection_${connection.source}_to_${connection.target}` },
     created: { instant: connection.created || new Date().toISOString() },
-    
+
     // Generic fields
     source: toTgdfBasic(connection.source, 'flexname'),
     target: toTgdfBasic(connection.target, 'flexname'),
@@ -166,17 +166,17 @@ export const toTgdfConnection = (connection) => {
     status: toTgdfBasic(connection.status || 'active', 'flexname'),
     type: toTgdfBasic(connection.type || 'default', 'flexname')
   };
-  
+
   // Generate version
   const version = "v0.1.0";
-  
+
   // Generate hashes for integrity
   const integrity = {
     hashes: {
       sha256: generateSimpleHash(data)
     }
   };
-  
+
   // Return the complete connection in TGDF format
   return {
     connection: {
@@ -202,24 +202,24 @@ export const toTgdfRecords = (records) => {
       name: { flexname: `record_${record.id || uuidv4().substring(0, 8)}` },
       created: { instant: record.timestamp || record.created || new Date().toISOString() },
     };
-    
+
     // Convert all other fields to TGDF format
     Object.entries(record).forEach(([key, value]) => {
       if (!['id', 'timestamp', 'created'].includes(key)) {
         data[key] = toTgdfBasic(value);
       }
     });
-    
+
     // Generate version
     const version = "v0.1.0";
-    
+
     // Generate hashes for integrity
     const integrity = {
       hashes: {
         sha256: generateSimpleHash(data)
       }
     };
-    
+
     // Return the complete record in TGDF format
     return {
       record: {
@@ -238,13 +238,13 @@ export const toTgdfRecords = (records) => {
  */
 export const fromTgdfBasic = (tgdfItem) => {
   if (!tgdfItem || typeof tgdfItem !== 'object') return tgdfItem;
-  
+
   const keys = Object.keys(tgdfItem);
   if (keys.length !== 1) return tgdfItem;
-  
+
   const type = keys[0];
   const value = tgdfItem[type];
-  
+
   switch (type) {
     case 'text':
     case 'flexname':
@@ -268,9 +268,9 @@ export const fromTgdfBasic = (tgdfItem) => {
  */
 export const fromTgdfNode = (tgdfNode) => {
   if (!tgdfNode || !tgdfNode.node || !tgdfNode.node.data) return null;
-  
+
   const { data } = tgdfNode.node;
-  
+
   // Extract standard node fields
   return {
     id: data.identityHash,
@@ -293,9 +293,9 @@ export const fromTgdfNode = (tgdfNode) => {
  */
 export const fromTgdfConnection = (tgdfConnection) => {
   if (!tgdfConnection || !tgdfConnection.connection || !tgdfConnection.connection.data) return null;
-  
+
   const { data } = tgdfConnection.connection;
-  
+
   // Extract standard connection fields
   return {
     id: data.identityHash,
@@ -316,25 +316,25 @@ export const fromTgdfConnection = (tgdfConnection) => {
  */
 export const fromTgdfRecords = (tgdfRecords) => {
   if (!Array.isArray(tgdfRecords)) return [];
-  
+
   return tgdfRecords.map(tgdfRecord => {
     if (!tgdfRecord || !tgdfRecord.record || !tgdfRecord.record.data) return null;
-    
+
     const { data } = tgdfRecord.record;
     const record = {
       id: data.identityHash,
     };
-    
+
     // Extract all fields except standard ones
     Object.entries(data).forEach(([key, value]) => {
       if (!['identityHash', 'tokens', 'name', 'created'].includes(key)) {
         record[key] = fromTgdfBasic(value);
       }
     });
-    
+
     // Add timestamp from created field
     record.timestamp = fromTgdfBasic(data.created);
-    
+
     return record;
   }).filter(record => record !== null);
 };
