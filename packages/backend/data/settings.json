@@ -1,5 +1,11 @@
 {
   "heartbeatInterval": 10,
+  "retryAttempts": 3,
+  "retryDelay": 2,
+  "statusUpdateFrequency": 5,
+  "monitoringEnabled": true,
+  "dataHistorySize": 25,
+  "notificationThreshold": "warning",
   "theme": "dark",
   "displayMode": "standard"
 }

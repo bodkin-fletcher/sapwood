@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { 
-  Paper, Typography, Box, Button, Divider, TextField, MenuItem, 
+import {
+  Paper, Typography, Box, Button, Divider, TextField, MenuItem,
   IconButton, Grid, Chip, Tooltip, Card, CardContent,
   FormControl, InputLabel, Select, CircularProgress, Alert
 } from '@mui/material';
@@ -11,12 +11,20 @@ import PingIcon from '@mui/icons-material/Sensors';
 import LinkIcon from '@mui/icons-material/Link';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import { useNodes } from '../context/NodeContext';
+import { useSettings } from '../context/SettingsContext';
 import NodeStatusIndicator from './NodeStatusIndicator';
-import { performHeartbeat, updateNodeStatus, executeNodeApiCall } from '../services/nodeUtils';
+import {
+  performHeartbeat,
+  updateNodeStatus,
+  executeNodeApiCall,
+  getNodeMetrics,
+  getApiCallMetrics
+} from '../services/nodeUtils';
 import { nodeService } from '../services/api';
 
 const NodeDetailsPanel = ({ node, onClose }) => {
   const { updateNode, deleteNode, connections } = useNodes();
+  const { settings } = useSettings();
   const [editing, setEditing] = useState(false);
   const [formValues, setFormValues] = useState({});
   const [errors, setErrors] = useState({});
@@ -25,7 +33,8 @@ const NodeDetailsPanel = ({ node, onClose }) => {
   const [connectedNodes, setConnectedNodes] = useState({ incoming: [], outgoing: [] });
   const [apiExecutionResult, setApiExecutionResult] = useState(null);
   const [isExecutingApi, setIsExecutingApi] = useState(false);
-
+  const [nodeMetrics, setNodeMetrics] = useState(null);
+  const [apiMetrics, setApiMetrics] = useState(null);
   // Set form values when node changes
   useEffect(() => {
     if (node) {
@@ -41,16 +50,20 @@ const NodeDetailsPanel = ({ node, onClose }) => {
       setPingResult(null); // Reset ping result when node changes
       setApiExecutionResult(null); // Reset API result when node changes
       findConnectedNodes(node.id); // Find connected nodes when node changes
+
+      // Get metrics for this node
+      setNodeMetrics(getNodeMetrics(node.id));
+      setApiMetrics(getApiCallMetrics(node.id));
     }
   }, [node, connections]);
 
   // Find nodes connected to this node
   const findConnectedNodes = (nodeId) => {
     if (!connections || !nodeId) return;
-    
+
     const incoming = [];
     const outgoing = [];
-    
+
     connections.forEach(conn => {
       if (conn.target === nodeId) {
         incoming.push(conn.source);
@@ -59,7 +72,7 @@ const NodeDetailsPanel = ({ node, onClose }) => {
         outgoing.push(conn.target);
       }
     });
-    
+
     setConnectedNodes({ incoming, outgoing });
   };
 
@@ -119,7 +132,7 @@ const NodeDetailsPanel = ({ node, onClose }) => {
 
   const handleDelete = async () => {
     if (!node) return;
-    
+
     if (window.confirm(`Are you sure you want to delete node "${node.name}"?`)) {
       const success = await deleteNode(node.id);
       if (success) {
@@ -127,24 +140,31 @@ const NodeDetailsPanel = ({ node, onClose }) => {
       }
     }
   };
-  
+
   // Perform a heartbeat check on the node
   const handleCheckStatus = async () => {
     if (!node) return;
-    
+
     setIsCheckingStatus(true);
     setPingResult(null);
-    
     try {
-      const heartbeatResult = await performHeartbeat(node);
+      const heartbeatResult = await performHeartbeat(node, {
+        retryAttempts: settings.retryAttempts,
+        retryDelay: settings.retryDelay
+      });
+
       setPingResult({
         success: heartbeatResult.success,
         latency: heartbeatResult.latency,
-        message: heartbeatResult.message
+        message: heartbeatResult.message,
+        attempts: heartbeatResult.attempts || 1
       });
-      
+
       // Update node status based on heartbeat result
       await updateNodeStatus(node.id, heartbeatResult);
+
+      // Update metrics
+      setNodeMetrics(getNodeMetrics(node.id));
     } catch (error) {
       console.error('Error checking node status:', error);
       setPingResult({
@@ -155,22 +175,28 @@ const NodeDetailsPanel = ({ node, onClose }) => {
       setIsCheckingStatus(false);
     }
   };
-  
   // Execute the node's API
   const handleExecuteApi = async () => {
     if (!node) return;
-    
+
     setIsExecutingApi(true);
     setApiExecutionResult(null);
-    
+
     try {
-      // Use the API service to execute the node's API
-      const result = await nodeService.executeNodeApi(node.id);
+      // Execute API call with retry mechanism
+      const result = await executeNodeApiCall(node, {
+        retryAttempts: settings.retryAttempts,
+        retryDelay: settings.retryDelay
+      });
+
       setApiExecutionResult(result);
-      
+
+      // Update API metrics
+      setApiMetrics(getApiCallMetrics(node.id));
+
       // If successful, update node status
       if (result.success) {
-        await updateNode(node.id, { 
+        await updateNode(node.id, {
           status: 'active',
           lastApiExecution: new Date().toISOString()
         });
@@ -207,9 +233,9 @@ const NodeDetailsPanel = ({ node, onClose }) => {
             Node Details
           </Typography>
           <Box sx={{ ml: 1, display: 'flex', alignItems: 'center' }}>
-            <NodeStatusIndicator 
-              status={node.status} 
-              isChecking={isCheckingStatus} 
+            <NodeStatusIndicator
+              status={node.status}
+              isChecking={isCheckingStatus}
               lastHeartbeat={node.lastHeartbeat}
               size={12}
             />
@@ -323,10 +349,10 @@ const NodeDetailsPanel = ({ node, onClose }) => {
                 {node.name}
               </Typography>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                <Chip 
-                  label={node.type} 
-                  size="small" 
-                  sx={{ mr: 1 }} 
+                <Chip
+                  label={node.type}
+                  size="small"
+                  sx={{ mr: 1 }}
                 />
                 <Typography variant="body2" color="text.secondary">
                   {node.protocol || 'http'}://{node.host}{node.port ? `:${node.port}` : ''}{node.path || ''}
@@ -340,12 +366,12 @@ const NodeDetailsPanel = ({ node, onClose }) => {
             </Box>
 
             <Divider sx={{ my: 2 }} />
-            
+
             <Box sx={{ mb: 2 }}>
               <Typography variant="subtitle1" gutterBottom>
                 API Execution
               </Typography>
-              
+
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 1 }}>
                 <Button
                   onClick={handleExecuteApi}
@@ -366,7 +392,7 @@ const NodeDetailsPanel = ({ node, onClose }) => {
                   Check Status
                 </Button>
               </Box>
-              
+
               {apiExecutionResult && (
                 <Card variant="outlined" sx={{ mb: 2, mt: 1 }}>
                   <CardContent>
@@ -375,25 +401,25 @@ const NodeDetailsPanel = ({ node, onClose }) => {
                         API Response {apiExecutionResult.success ? '✓' : '✗'}
                       </Typography>
                       {apiExecutionResult.statusCode && (
-                        <Chip 
-                          label={`Status: ${apiExecutionResult.statusCode}`} 
+                        <Chip
+                          label={`Status: ${apiExecutionResult.statusCode}`}
                           size="small"
                           color={apiExecutionResult.success ? "success" : "error"}
                           variant="outlined"
                         />
                       )}
                     </Box>
-                    
+
                     <Typography variant="caption" display="block" gutterBottom>
                       {apiExecutionResult.url || `${node.protocol || 'http'}://${node.host}${node.port ? `:${node.port}` : ''}${node.path || ''}`}
                     </Typography>
-                    
+
                     {apiExecutionResult.latency && (
                       <Typography variant="body2" color="text.secondary" gutterBottom>
                         Latency: {apiExecutionResult.latency}ms
                       </Typography>
                     )}
-                    
+
                     <Box sx={{ mt: 1, p: 1, backgroundColor: 'grey.50', borderRadius: 1, overflow: 'auto', maxHeight: 200 }}>
                       <pre style={{ margin: 0, fontSize: '0.75rem' }}>
                         {JSON.stringify(apiExecutionResult.data || apiExecutionResult.error || {}, null, 2)}
@@ -404,8 +430,8 @@ const NodeDetailsPanel = ({ node, onClose }) => {
               )}
 
               {pingResult && (
-                <Alert 
-                  severity={pingResult.success ? "success" : "error"} 
+                <Alert
+                  severity={pingResult.success ? "success" : "error"}
                   sx={{ mb: 2 }}
                 >
                   {pingResult.message}
@@ -413,7 +439,7 @@ const NodeDetailsPanel = ({ node, onClose }) => {
                 </Alert>
               )}
             </Box>
-            
+
             {hasConnections && (
               <>
                 <Divider sx={{ my: 2 }} />
@@ -446,7 +472,94 @@ const NodeDetailsPanel = ({ node, onClose }) => {
                 </Box>
               </>
             )}
-            
+
+            {/* Metrics Section */}
+            <Divider sx={{ my: 2 }} />
+            <Box sx={{ mb: 2 }}>
+              <Typography variant="subtitle1" gutterBottom>
+                Node Metrics
+              </Typography>
+
+              {nodeMetrics && (
+                <Grid container spacing={2}>
+                  <Grid item xs={6}>
+                    <Typography variant="body2" color="text.secondary">
+                      Uptime:
+                    </Typography>
+                    <Typography variant="body1">
+                      {nodeMetrics.uptime.toFixed(1)}%
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Typography variant="body2" color="text.secondary">
+                      Avg. Latency:
+                    </Typography>
+                    <Typography variant="body1">
+                      {nodeMetrics.avgLatency} ms
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Typography variant="body2" color="text.secondary">
+                      Total Checks:
+                    </Typography>
+                    <Typography variant="body1">
+                      {nodeMetrics.totalChecks}
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Typography variant="body2" color="text.secondary">
+                      Failure Rate:
+                    </Typography>
+                    <Typography variant="body1" color={nodeMetrics.failureRate > 20 ? "error.main" : "inherit"}>
+                      {nodeMetrics.failureRate.toFixed(1)}%
+                    </Typography>
+                  </Grid>
+                </Grid>
+              )}
+
+              {apiMetrics && apiMetrics.totalCalls > 0 && (
+                <>
+                  <Typography variant="subtitle2" sx={{ mt: 2, mb: 1 }}>
+                    API Metrics
+                  </Typography>
+                  <Grid container spacing={2}>
+                    <Grid item xs={6}>
+                      <Typography variant="body2" color="text.secondary">
+                        Success Rate:
+                      </Typography>
+                      <Typography variant="body1">
+                        {apiMetrics.successRate.toFixed(1)}%
+                      </Typography>
+                    </Grid>
+                    <Grid item xs={6}>
+                      <Typography variant="body2" color="text.secondary">
+                        Avg. Attempts:
+                      </Typography>
+                      <Typography variant="body1">
+                        {apiMetrics.avgAttempts}
+                      </Typography>
+                    </Grid>
+                    <Grid item xs={6}>
+                      <Typography variant="body2" color="text.secondary">
+                        Total Calls:
+                      </Typography>
+                      <Typography variant="body1">
+                        {apiMetrics.totalCalls}
+                      </Typography>
+                    </Grid>
+                    <Grid item xs={6}>
+                      <Typography variant="body2" color="text.secondary">
+                        Avg. Latency:
+                      </Typography>
+                      <Typography variant="body1">
+                        {apiMetrics.avgLatency} ms
+                      </Typography>
+                    </Grid>
+                  </Grid>
+                </>
+              )}
+            </Box>
+
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 3, gap: 1 }}>
               <Button
                 onClick={handleDelete}

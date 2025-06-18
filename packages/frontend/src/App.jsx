@@ -17,6 +17,7 @@ import NodeDisplayPage from './pages/NodeDisplayPage'
 import SettingsPage from './pages/SettingsPage'
 import WelcomePage from './pages/WelcomePage'
 import DataWranglingPage from './pages/DataWranglingPage'
+import MonitoringPage from './pages/MonitoringPage'
 
 const drawerWidth = 240;
 
@@ -25,6 +26,7 @@ const navItems = [
   { text: 'Home', icon: <HomeIcon />, path: '/' },
   { text: 'Node Display', icon: <DashboardIcon />, path: '/nodes' },
   { text: 'Data Wrangling', icon: <StorageIcon />, path: '/data' },
+  { text: 'Monitoring', icon: <DashboardIcon />, path: '/monitoring' },
   { text: 'Layout Display', icon: <PrintIcon />, path: '/layout' },
   { text: 'Settings', icon: <SettingsIcon />, path: '/settings' },
 ];
@@ -53,9 +55,9 @@ function App() {
       <List>
         {navItems.map(({ text, icon, path }) => (
           <ListItem key={text} disablePadding>
-            <ListItemButton 
-              component={Link} 
-              to={path} 
+            <ListItemButton
+              component={Link}
+              to={path}
               selected={location.pathname === path}
             >
               <ListItemIcon>
@@ -67,82 +69,83 @@ function App() {
         ))}
       </List>
     </div>
-  );  return (
+  ); return (
     <NodeProvider>
       <SettingsProvider>
         <Box sx={{ display: 'flex' }}>
-      <CssBaseline />
-      <AppBar
-        position="fixed"
-        sx={{
-          width: { sm: `calc(100% - ${drawerWidth}px)` },
-          ml: { sm: `${drawerWidth}px` },
-        }}
-      >
-        <Toolbar>
-          <IconButton
-            color="inherit"
-            aria-label="open drawer"
-            edge="start"
-            onClick={handleDrawerToggle}
-            sx={{ mr: 2, display: { sm: 'none' } }}
+          <CssBaseline />
+          <AppBar
+            position="fixed"
+            sx={{
+              width: { sm: `calc(100% - ${drawerWidth}px)` },
+              ml: { sm: `${drawerWidth}px` },
+            }}
           >
-            <MenuIcon />
-          </IconButton>          <Typography variant="h6" noWrap component="div">
-            {getCurrentPageTitle()}
-          </Typography>
-        </Toolbar>
-      </AppBar>
-      <Box
-        component="nav"
-        sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}
-        aria-label="navigation"
-      >
-        <Drawer
-          variant="temporary"
-          open={mobileOpen}
-          onClose={handleDrawerToggle}
-          ModalProps={{
-            keepMounted: true,
-          }}
-          sx={{
-            display: { xs: 'block', sm: 'none' },
-            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
-          }}
-        >
-          {drawer}
-        </Drawer>
-        <Drawer
-          variant="permanent"
-          sx={{
-            display: { xs: 'none', sm: 'block' },
-            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
-          }}
-          open
-        >
-          {drawer}
-        </Drawer>
-      </Box>      <Box
-        component="main"
-        sx={{ flexGrow: 1, p: 3, width: { sm: `calc(100% - ${drawerWidth}px)` } }}
-      >
-        <Toolbar />        <Routes>
-          <Route path="/" element={<WelcomePage />} />
-          <Route path="/nodes" element={<NodeDisplayPage />} />
-          <Route path="/settings" element={<SettingsPage />} />
-          <Route path="/data" element={<DataWranglingPage />} />
-          <Route path="/layout" element={
-            <Container>
-              <Typography variant="h4" gutterBottom>
-                Layout Display
+            <Toolbar>
+              <IconButton
+                color="inherit"
+                aria-label="open drawer"
+                edge="start"
+                onClick={handleDrawerToggle}
+                sx={{ mr: 2, display: { sm: 'none' } }}
+              >
+                <MenuIcon />
+              </IconButton>          <Typography variant="h6" noWrap component="div">
+                {getCurrentPageTitle()}
               </Typography>
-              <Typography variant="body1">
-                This feature will be implemented in Sprint 5.
-              </Typography>
-            </Container>
-          } />
-        </Routes></Box>
-    </Box>
+            </Toolbar>
+          </AppBar>
+          <Box
+            component="nav"
+            sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}
+            aria-label="navigation"
+          >
+            <Drawer
+              variant="temporary"
+              open={mobileOpen}
+              onClose={handleDrawerToggle}
+              ModalProps={{
+                keepMounted: true,
+              }}
+              sx={{
+                display: { xs: 'block', sm: 'none' },
+                '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
+              }}
+            >
+              {drawer}
+            </Drawer>
+            <Drawer
+              variant="permanent"
+              sx={{
+                display: { xs: 'none', sm: 'block' },
+                '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
+              }}
+              open
+            >
+              {drawer}
+            </Drawer>
+          </Box>      <Box
+            component="main"
+            sx={{ flexGrow: 1, p: 3, width: { sm: `calc(100% - ${drawerWidth}px)` } }}
+          >
+            <Toolbar />        <Routes>
+              <Route path="/" element={<WelcomePage />} />
+              <Route path="/nodes" element={<NodeDisplayPage />} />
+              <Route path="/settings" element={<SettingsPage />} />
+              <Route path="/data" element={<DataWranglingPage />} />
+              <Route path="/monitoring" element={<MonitoringPage />} />
+              <Route path="/layout" element={
+                <Container>
+                  <Typography variant="h4" gutterBottom>
+                    Layout Display
+                  </Typography>
+                  <Typography variant="body1">
+                    This feature will be implemented in Sprint 5.
+                  </Typography>
+                </Container>
+              } />
+            </Routes></Box>
+        </Box>
       </SettingsProvider>
     </NodeProvider>
   );

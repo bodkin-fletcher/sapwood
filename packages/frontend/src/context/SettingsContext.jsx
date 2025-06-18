@@ -7,6 +7,12 @@ const SettingsContext = createContext();
 export const SettingsProvider = ({ children }) => {
   const [settings, setSettings] = useState({
     heartbeatInterval: 10, // Default: 10 seconds
+    retryAttempts: 3, // Number of retry attempts for failed connections
+    retryDelay: 2, // Delay in seconds between retry attempts
+    statusUpdateFrequency: 5, // How often to refresh status data (seconds)
+    monitoringEnabled: true, // Whether monitoring is enabled
+    dataHistorySize: 25, // Number of historical data points to keep
+    notificationThreshold: 'warning', // Minimum level for notifications (info, warning, error)
     theme: 'dark', // Dark theme by default
     displayMode: 'standard',
   });
@@ -86,7 +92,7 @@ export const SettingsProvider = ({ children }) => {
       setLoading(false);
     }
   };
-  
+
   const resetSettings = async () => {
     try {
       setLoading(true);

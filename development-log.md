@@ -223,6 +223,56 @@ We have successfully completed Sprint 3 with the implementation of TGDF across t
 
 The data wrangling features provide a solid foundation for users to work with data flowing through nodes, making Sapwood more functional and valuable as an integration tool.
 
+## Sprint 4: API Integration & Enhanced Monitoring
+
+### Monitoring System Enhancements
+
+#### Retry Mechanism
+- **Feature**: Implemented a configurable retry system for heartbeats and API calls.
+- **Implementation**: Both heartbeat checks and API executions now support retry attempts with configurable delay.
+- **Configuration**: Users can set the number of retry attempts and delay between retries in the settings.
+
+#### Real-time Status Updates
+- **Feature**: Added a monitoring dashboard with real-time node status updates.
+- **Implementation**: Created a dedicated monitoring page that shows node health metrics and connectivity status.
+- **Technical Implementation**: Status updates can be configured to refresh at specified intervals.
+
+#### Node Metrics
+- **Enhancement**: Added comprehensive metrics tracking for each node.
+- **Implementation**:
+  1. Track uptime percentage, average latency, and failure rates
+  2. Store historical heartbeat and API call data
+  3. Display metrics in both node details panel and monitoring dashboard
+
+#### Connection Monitoring
+- **Feature**: Enhanced monitoring to include connection status.
+- **Implementation**: The monitoring dashboard shows the overall system health, including the status of connections.
+
+### API Integration Enhancements
+
+#### Robust Error Handling
+- **Feature**: Implemented more sophisticated error handling for API calls.
+- **Implementation**: API calls now track attempts, success rates, and specific error messages.
+- **User Experience**: Error messages are more descriptive and helpful for troubleshooting.
+
+#### API Call History
+- **Feature**: Added history tracking for API calls.
+- **Implementation**: Each node maintains a configurable history of recent API calls.
+- **UI Integration**: History can be viewed in both the node details panel and monitoring dashboard.
+
+### Settings and Configuration
+
+#### Enhanced Settings Panel
+- **Feature**: Expanded the settings panel with more configuration options.
+- **Implementation**: Added controls for retry attempts, monitoring frequency, history size, etc.
+- **User Experience**: Settings are organized into logical groups with appropriate controls.
+
+#### Per-Node Configuration
+- **Feature**: Added ability to view detailed metrics for each node.
+- **Implementation**: Node details panel now shows node-specific metrics.
+
+Sapwood's monitoring capabilities are now significantly enhanced, providing users with deeper insights into their system's health and performance. The retry mechanisms make the system more resilient to temporary failures, and the comprehensive metrics help identify patterns and potential issues.
+
 ## Conclusion
 
 Sapwood's design aims to balance visual simplicity with powerful functionality, allowing users to represent and interact with distributed systems in an intuitive way. The UI decisions prioritize clarity and usability, while the architectural choices focus on flexibility and maintainability.
