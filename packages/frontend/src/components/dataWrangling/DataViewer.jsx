@@ -191,8 +191,7 @@ export default function DataViewer({ data, snapshot }) {
             The current data cannot be displayed in table format. Please use JSON view.
           </Alert>
         );
-      
-      case 2: // CSV View
+        case 2: // CSV View
         return (
           <Box sx={{ mt: 2 }}>
             <Paper variant="outlined" sx={{ p: 2, fontFamily: 'monospace', whiteSpace: 'pre-wrap' }}>
@@ -217,6 +216,27 @@ export default function DataViewer({ data, snapshot }) {
             </Button>
           </Box>
         );
+      case 3: // TGDF View
+        return (
+          <Box sx={{ mt: 2 }}>
+            <Typography variant="subtitle2" gutterBottom>
+              TGDF Format View
+            </Typography>
+            <Alert severity="info" sx={{ mb: 2 }}>
+              This view shows the data in Tagged Data Format (TGDF) structure with metadata and integrity information.
+            </Alert>
+            <Box sx={{ p: 2, bgcolor: 'background.paper', borderRadius: 1 }}>
+              <ReactJson 
+                src={data.tgdfRecords || data.records} 
+                theme={theme.palette.mode === 'dark' ? 'monokai' : 'twilight'} 
+                collapsed={2}
+                displayDataTypes={true}
+                enableClipboard={true}
+                style={{ fontFamily: 'monospace', fontSize: '0.9rem' }}
+              />
+            </Box>
+          </Box>
+        );
       
       default:
         return null;
@@ -233,11 +253,11 @@ export default function DataViewer({ data, snapshot }) {
         </Typography>
       </Box>
 
-      <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-        <Tabs value={viewFormat} onChange={handleFormatChange} aria-label="data format tabs">
+      <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>        <Tabs value={viewFormat} onChange={handleFormatChange} aria-label="data format tabs">
           <Tab label="JSON" />
           <Tab label="Table" />
           <Tab label="CSV" />
+          <Tab label="TGDF" />
         </Tabs>
       </Box>
       

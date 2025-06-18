@@ -1,8 +1,12 @@
 // Node data storage and API routes
 import { randomUUID } from 'crypto';
+import { 
+  toTgdfNode, toTgdfNodes, toTgdfConnection, toTgdfConnections,
+  fromTgdfNode, fromTgdfConnection
+} from '../utils/tgdf.js';
 
-// In-memory data store
-const nodes = [
+// In-memory data store (in standard format first, will convert to TGDF when serving)
+const standardNodes = [
   { 
     id: '1', 
     name: 'API Gateway', 
@@ -12,9 +16,9 @@ const nodes = [
     protocol: 'https',
     path: '/api/v1',
     status: 'active',
-    description: 'Main API gateway for external services'
-  },
-  { 
+    description: 'Main API gateway for external services',
+    created: '2025-06-01T10:00:00Z'
+  },  { 
     id: '2', 
     name: 'Database', 
     type: 'storage',
@@ -23,7 +27,8 @@ const nodes = [
     protocol: 'http',
     path: '/query',
     status: 'active',
-    description: 'Primary PostgreSQL database'
+    description: 'Primary PostgreSQL database',
+    created: '2025-06-01T10:05:00Z'
   },
   { 
     id: '3', 
@@ -34,14 +39,42 @@ const nodes = [
     protocol: 'http',
     path: '/process',
     status: 'inactive',
-    description: 'Data processing microservice'
+    description: 'Data processing microservice',
+    created: '2025-06-01T10:10:00Z'
   },
 ];
 
-let connections = [];
+// Convert to TGDF format
+const nodes = standardNodes.map(node => toTgdfNode(node));
 
-export default async function registerNodeRoutes(fastify) {
-  // Get all nodes
+// Connections in standard format
+let standardConnections = [
+  {
+    id: 'conn-1',
+    source: '1',
+    target: '2',
+    sourcePoint: 0,
+    targetPoint: 0,
+    type: 'data',
+    status: 'active',
+    created: '2025-06-01T10:15:00Z'
+  },
+  {
+    id: 'conn-2',
+    source: '2',
+    target: '3',
+    sourcePoint: 1,
+    targetPoint: 0,
+    type: 'process',
+    status: 'inactive',
+    created: '2025-06-01T10:20:00Z'
+  }
+];
+
+// Convert to TGDF format
+let connections = standardConnections.map(connection => toTgdfConnection(connection));
+
+export default async function registerNodeRoutes(fastify) {// Get all nodes
   fastify.get('/api/nodes', async (request, reply) => {
     return { nodes };
   });
@@ -49,18 +82,25 @@ export default async function registerNodeRoutes(fastify) {
   // Get a specific node by ID
   fastify.get('/api/nodes/:id', async (request, reply) => {
     const { id } = request.params;
-    const node = nodes.find(n => n.id === id);
+    const tgdfNode = nodes.find(n => n.node.data.identityHash === id);
     
-    if (!node) {
+    if (!tgdfNode) {
       reply.code(404);
       return { error: 'Node not found' };
     }
     
-    return { node };
+    return { node: tgdfNode };
   });
-
   // Create a new node
   fastify.post('/api/nodes', async (request, reply) => {
+    // If request is already in TGDF format
+    if (request.body.node && request.body.node.data) {
+      const tgdfNode = request.body;
+      nodes.push(tgdfNode);
+      return { node: tgdfNode };
+    }
+
+    // If request is in standard format
     const { name, type, host, port, protocol, path, description } = request.body;
     
     // Simple validation
@@ -68,8 +108,8 @@ export default async function registerNodeRoutes(fastify) {
       reply.code(400);
       return { error: 'Name and host are required' };
     }
-    
-    const newNode = {
+      // Create a standard node first
+    const standardNode = {
       id: randomUUID(),
       name,
       type: type || 'service',
@@ -78,58 +118,112 @@ export default async function registerNodeRoutes(fastify) {
       protocol: protocol || 'http',
       path: path || '',
       description: description || '',
-      status: 'active'
+      status: 'active',
+      created: new Date().toISOString()
     };
     
-    nodes.push(newNode);
+    // Convert to TGDF format
+    const tgdfNode = toTgdfNode(standardNode);
+    
+    // Add to nodes array
+    nodes.push(tgdfNode);
+    standardNodes.push(standardNode);
     
     reply.code(201);
-    return { node: newNode };
+    return { node: tgdfNode };
   });
-
   // Update a node
   fastify.put('/api/nodes/:id', async (request, reply) => {
     const { id } = request.params;
     const updates = request.body;
     
-    const nodeIndex = nodes.findIndex(n => n.id === id);
+    // Find in TGDF format
+    const nodeIndex = nodes.findIndex(n => n.node.data.identityHash === id);
     
     if (nodeIndex === -1) {
       reply.code(404);
       return { error: 'Node not found' };
+    }    // Find the standard node too for easier updating
+    const standardNodeIndex = standardNodes.findIndex(n => n.id === id);
+    
+    let updatedStandardNode;
+    let updatedTgdfNode;
+    
+    // If the update is already in TGDF format
+    if (updates.node && updates.node.data) {
+      updatedTgdfNode = updates;
+      updatedStandardNode = fromTgdfNode(updatedTgdfNode);
+      updatedStandardNode.id = id; // Ensure ID doesn't change
+      
+      // Update arrays
+      nodes[nodeIndex] = updatedTgdfNode;
+      if (standardNodeIndex !== -1) {
+        standardNodes[standardNodeIndex] = updatedStandardNode;
+      }
+    } else {
+      // Update the standard node first
+      if (standardNodeIndex !== -1) {
+        updatedStandardNode = {
+          ...standardNodes[standardNodeIndex],
+          ...updates,
+          id // Ensure ID doesn't change
+        };
+        standardNodes[standardNodeIndex] = updatedStandardNode;
+      } else {
+        // If we can't find the standard node, create a new one from updates
+        updatedStandardNode = {
+          id,
+          ...updates
+        };
+      }
+      
+      // Convert to TGDF and update
+      updatedTgdfNode = toTgdfNode(updatedStandardNode);
+      nodes[nodeIndex] = updatedTgdfNode;
     }
     
-    // Update the node
-    nodes[nodeIndex] = {
-      ...nodes[nodeIndex],
-      ...updates,
-      id // Ensure ID doesn't change
-    };
-    
-    return { node: nodes[nodeIndex] };
+    return { node: updatedTgdfNode };
   });
-
   // Delete a node
   fastify.delete('/api/nodes/:id', async (request, reply) => {
     const { id } = request.params;
-    const nodeIndex = nodes.findIndex(n => n.id === id);
+    const nodeIndex = nodes.findIndex(n => n.node.data.identityHash === id);
     
     if (nodeIndex === -1) {
       reply.code(404);
       return { error: 'Node not found' };
     }
     
+    // Remove from both arrays
     nodes.splice(nodeIndex, 1);
     
+    const standardNodeIndex = standardNodes.findIndex(n => n.id === id);
+    if (standardNodeIndex !== -1) {
+      standardNodes.splice(standardNodeIndex, 1);
+    }
+    
     // Also remove any connections involving this node
-    const initialConnectionCount = connections.length;
-    connections = connections.filter(
+    let connectionsRemoved = 0;
+
+    // Update standard connections
+    const initialStandardConnectionCount = standardConnections.length;
+    standardConnections = standardConnections.filter(
       conn => conn.source !== id && conn.target !== id
     );
+    connectionsRemoved = initialStandardConnectionCount - standardConnections.length;
+
+    // Update TGDF connections (if we've converted them)
+    if (connections && Array.isArray(connections)) {
+      connections = connections.filter(
+        conn => conn.connection && 
+          fromTgdfBasic(conn.connection.data.source) !== id && 
+          fromTgdfBasic(conn.connection.data.target) !== id
+      );
+    }
     
     return { 
       success: true, 
-      connectionsRemoved: initialConnectionCount - connections.length 
+      connectionsRemoved
     };
   });
 
@@ -211,7 +305,6 @@ export default async function registerNodeRoutes(fastify) {
       };
     }
   });
-
   // Get all connections
   fastify.get('/api/connections', async (request, reply) => {
     return { connections };
@@ -219,11 +312,25 @@ export default async function registerNodeRoutes(fastify) {
 
   // Create a new connection
   fastify.post('/api/connections', async (request, reply) => {
-    const { source, target, label, type, description, properties, sourcePoint, targetPoint } = request.body;
+    // If request is already in TGDF format
+    if (request.body.connection && request.body.connection.data) {
+      const tgdfConnection = request.body;
+      connections.push(tgdfConnection);
+      
+      // Also add to standard connections for backward compatibility
+      const standardConnection = fromTgdfConnection(tgdfConnection);
+      standardConnections.push(standardConnection);
+      
+      reply.code(201);
+      return { connection: tgdfConnection };
+    }
+    
+    // If request is in standard format
+    const { source, target, type, sourcePoint, targetPoint } = request.body;
     
     // Validate nodes exist
-    const sourceNode = nodes.find(n => n.id === source);
-    const targetNode = nodes.find(n => n.id === target);
+    const sourceNode = nodes.find(n => n.node.data.identityHash === source);
+    const targetNode = nodes.find(n => n.node.data.identityHash === target);
     
     if (!sourceNode || !targetNode) {
       reply.code(400);
@@ -231,46 +338,52 @@ export default async function registerNodeRoutes(fastify) {
     }
     
     // Check if connection already exists
-    const connectionExists = connections.some(
-      c => c.source === source && c.target === target && 
-           c.sourcePointIndex === sourcePoint?.index && c.targetPointIndex === targetPoint?.index
-    );
+    const connectionExists = connections.some(conn => {
+      const connData = conn.connection.data;
+      return fromTgdfBasic(connData.source) === source && 
+             fromTgdfBasic(connData.target) === target && 
+             fromTgdfBasic(connData.sourcePoint) === sourcePoint && 
+             fromTgdfBasic(connData.targetPoint) === targetPoint;
+    });
     
     if (connectionExists) {
       reply.code(409);
       return { error: 'Connection already exists' };
     }
     
-    const newConnection = {
+    // Create standard connection first
+    const standardConnection = {
       id: randomUUID(),
       source,
       target,
-      sourcePointIndex: sourcePoint?.index,
-      targetPointIndex: targetPoint?.index,
-      label: label || null,
+      sourcePoint: sourcePoint || 0,
+      targetPoint: targetPoint || 0,
       type: type || 'default',
-      description: description || '',
-      properties: properties || {},
+      status: 'active',
       created: new Date().toISOString()
     };
     
-    connections.push(newConnection);
+    // Convert to TGDF format
+    const tgdfConnection = toTgdfConnection(standardConnection);
+    
+    // Add to both arrays
+    connections.push(tgdfConnection);
+    standardConnections.push(standardConnection);
     
     reply.code(201);
-    return { connection: newConnection };
+    return { connection: tgdfConnection };
   });
-
   // Get a specific connection by ID
   fastify.get('/api/connections/:id', async (request, reply) => {
     const { id } = request.params;
-    const connection = connections.find(c => c.id === id);
+    const tgdfConnection = connections.find(c => c.connection.data.identityHash === id);
     
-    if (!connection) {
+    if (!tgdfConnection) {
       reply.code(404);
       return { error: 'Connection not found' };
     }
     
-    return { connection };
+    return { connection: tgdfConnection };
   });
 
   // Update a connection
@@ -278,48 +391,103 @@ export default async function registerNodeRoutes(fastify) {
     const { id } = request.params;
     const updates = request.body;
     
-    const connectionIndex = connections.findIndex(c => c.id === id);
+    // Find in TGDF format
+    const connectionIndex = connections.findIndex(c => c.connection.data.identityHash === id);
     
     if (connectionIndex === -1) {
       reply.code(404);
       return { error: 'Connection not found' };
     }
-
-    // If changing source or target, validate new nodes exist
-    if (updates.source || updates.target) {
-      const sourceId = updates.source || connections[connectionIndex].source;
-      const targetId = updates.target || connections[connectionIndex].target;
+    
+    // Find the standard connection too for easier updating
+    const standardConnectionIndex = standardConnections.findIndex(c => c.id === id);
+    
+    let updatedStandardConnection;
+    let updatedTgdfConnection;
+    
+    // If the update is already in TGDF format
+    if (updates.connection && updates.connection.data) {
+      updatedTgdfConnection = updates;
+      updatedStandardConnection = fromTgdfConnection(updatedTgdfConnection);
+      updatedStandardConnection.id = id; // Ensure ID doesn't change
       
-      const sourceNode = nodes.find(n => n.id === sourceId);
-      const targetNode = nodes.find(n => n.id === targetId);
+      // If changing source or target, validate new nodes exist
+      const sourceId = fromTgdfBasic(updatedTgdfConnection.connection.data.source);
+      const targetId = fromTgdfBasic(updatedTgdfConnection.connection.data.target);
+      
+      const sourceNode = nodes.find(n => n.node.data.identityHash === sourceId);
+      const targetNode = nodes.find(n => n.node.data.identityHash === targetId);
       
       if (!sourceNode || !targetNode) {
         reply.code(400);
         return { error: 'Source or target node not found' };
       }
+      
+      // Update arrays
+      connections[connectionIndex] = updatedTgdfConnection;
+      if (standardConnectionIndex !== -1) {
+        standardConnections[standardConnectionIndex] = updatedStandardConnection;
+      }
+    } else {
+      // If changing source or target, validate new nodes exist
+      if (updates.source || updates.target) {
+        const currentConn = connections[connectionIndex];
+        const sourceId = updates.source || fromTgdfBasic(currentConn.connection.data.source);
+        const targetId = updates.target || fromTgdfBasic(currentConn.connection.data.target);
+        
+        const sourceNode = nodes.find(n => n.node.data.identityHash === sourceId);
+        const targetNode = nodes.find(n => n.node.data.identityHash === targetId);
+        
+        if (!sourceNode || !targetNode) {
+          reply.code(400);
+          return { error: 'Source or target node not found' };
+        }
+      }
+      
+      // Update the standard connection first
+      if (standardConnectionIndex !== -1) {
+        updatedStandardConnection = {
+          ...standardConnections[standardConnectionIndex],
+          ...updates,
+          id // Ensure ID doesn't change
+        };
+        standardConnections[standardConnectionIndex] = updatedStandardConnection;
+      } else {
+        // If we can't find the standard connection, create one from the TGDF connection
+        const currentConn = fromTgdfConnection(connections[connectionIndex]);
+        updatedStandardConnection = {
+          ...currentConn,
+          ...updates,
+          id // Ensure ID doesn't change
+        };
+        standardConnections.push(updatedStandardConnection);
+      }
+      
+      // Convert to TGDF and update
+      updatedTgdfConnection = toTgdfConnection(updatedStandardConnection);
+      connections[connectionIndex] = updatedTgdfConnection;
     }
     
-    // Update the connection
-    connections[connectionIndex] = {
-      ...connections[connectionIndex],
-      ...updates,
-      id // Ensure ID doesn't change
-    };
-    
-    return { connection: connections[connectionIndex] };
+    return { connection: updatedTgdfConnection };
   });
-
   // Delete a connection
   fastify.delete('/api/connections/:id', async (request, reply) => {
     const { id } = request.params;
-    const connectionIndex = connections.findIndex(c => c.id === id);
+    const connectionIndex = connections.findIndex(c => c.connection.data.identityHash === id);
     
     if (connectionIndex === -1) {
       reply.code(404);
       return { error: 'Connection not found' };
     }
     
+    // Remove from TGDF connections array
     connections.splice(connectionIndex, 1);
+    
+    // Also remove from standard connections array for consistency
+    const standardConnectionIndex = standardConnections.findIndex(c => c.id === id);
+    if (standardConnectionIndex !== -1) {
+      standardConnections.splice(standardConnectionIndex, 1);
+    }
     
     return { success: true };
   });

@@ -42,9 +42,11 @@ export default function DataEditor({ data, onSave }) {
     setLoading(true);
     setError(null);
     
-    try {
-      // Parse the edited JSON to validate it
+    try {      // Parse the edited JSON to validate it
       const parsedData = JSON.parse(editorValue);
+      
+      // Note: dataService.updateNodeData and updateConnectionData will 
+      // automatically handle TGDF conversion of the provided data
       
       // Determine if we're saving node data or connection data
       let result;

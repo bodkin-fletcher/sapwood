@@ -1772,6 +1772,7 @@ const RAW_RUNTIME_STATE =
           ["react-dom", "virtual:2cdc82d73789ee3c7acbb391ac418a2a582541ef264f73324633f520e8ca31b7749565da45351ef067c96134b36940acea65ed019495505afb9854a56a545447#npm:18.3.1"],\
           ["react-json-view", "virtual:2cdc82d73789ee3c7acbb391ac418a2a582541ef264f73324633f520e8ca31b7749565da45351ef067c96134b36940acea65ed019495505afb9854a56a545447#npm:1.21.3"],\
           ["react-router-dom", "virtual:2cdc82d73789ee3c7acbb391ac418a2a582541ef264f73324633f520e8ca31b7749565da45351ef067c96134b36940acea65ed019495505afb9854a56a545447#npm:7.6.2"],\
+          ["uuid", "npm:11.1.0"],\
           ["vite", "virtual:2cdc82d73789ee3c7acbb391ac418a2a582541ef264f73324633f520e8ca31b7749565da45351ef067c96134b36940acea65ed019495505afb9854a56a545447#npm:5.4.19"]\
         ],\
         "linkType": "SOFT"\
@@ -6739,6 +6740,15 @@ const RAW_RUNTIME_STATE =
         "packagePeers": [\
           "@types/react",\
           "react"\
+        ],\
+        "linkType": "HARD"\
+      }]\
+    ]],\
+    ["uuid", [\
+      ["npm:11.1.0", {\
+        "packageLocation": "./.yarn/cache/uuid-npm-11.1.0-61d0d08928-34aa51b987.zip/node_modules/uuid/",\
+        "packageDependencies": [\
+          ["uuid", "npm:11.1.0"]\
         ],\
         "linkType": "HARD"\
       }]\

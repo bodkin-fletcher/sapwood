@@ -1,8 +1,11 @@
 // API service for node-related operations
+import { 
+  toTgdfNode, toTgdfConnection, fromTgdfNode, fromTgdfConnection 
+} from './tgdf';
+
 const API_BASE_URL = 'http://localhost:8080/api';
 
-export const nodeService = {
-  // Get all nodes
+export const nodeService = {  // Get all nodes
   async getAllNodes() {
     try {
       const response = await fetch(`${API_BASE_URL}/nodes`);
@@ -10,13 +13,13 @@ export const nodeService = {
         throw new Error(`Error: ${response.status}`);
       }
       const data = await response.json();
-      return data.nodes;
+      // Convert TGDF nodes to standard format
+      return data.tgdfNodes?.map(fromTgdfNode) || [];
     } catch (error) {
       console.error('Error fetching nodes:', error);
       throw error;
     }
   },
-
   // Get a specific node
   async getNodeById(id) {
     try {
@@ -25,22 +28,25 @@ export const nodeService = {
         throw new Error(`Error: ${response.status}`);
       }
       const data = await response.json();
-      return data.node;
+      // Convert TGDF node to standard format
+      return fromTgdfNode(data.tgdfNode);
     } catch (error) {
       console.error(`Error fetching node ${id}:`, error);
       throw error;
     }
   },
-
   // Create a new node
   async createNode(nodeData) {
     try {
+      // Convert to TGDF format
+      const tgdfNode = toTgdfNode(nodeData);
+      
       const response = await fetch(`${API_BASE_URL}/nodes`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(nodeData),
+        body: JSON.stringify(tgdfNode),
       });
       
       if (!response.ok) {
@@ -48,22 +54,25 @@ export const nodeService = {
       }
       
       const data = await response.json();
-      return data.node;
+      // Convert TGDF response back to standard format
+      return fromTgdfNode(data.node);
     } catch (error) {
       console.error('Error creating node:', error);
       throw error;
     }
   },
-
   // Update a node
   async updateNode(id, updates) {
     try {
+      // Convert updates to TGDF format
+      const tgdfUpdates = toTgdfNode(updates);
+      
       const response = await fetch(`${API_BASE_URL}/nodes/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(updates),
+        body: JSON.stringify(tgdfUpdates),
       });
       
       if (!response.ok) {
@@ -71,7 +80,8 @@ export const nodeService = {
       }
       
       const data = await response.json();
-      return data.node;
+      // Convert the response back from TGDF
+      return fromTgdfNode(data.node);
     } catch (error) {
       console.error(`Error updating node ${id}:`, error);
       throw error;
@@ -115,7 +125,6 @@ export const nodeService = {
       throw error;
     }
   },
-
   // Get all connections
   async getAllConnections() {
     try {
@@ -124,13 +133,13 @@ export const nodeService = {
         throw new Error(`Error: ${response.status}`);
       }
       const data = await response.json();
-      return data.connections;
+      // Convert TGDF connections to standard format
+      return data.tgdfConnections?.map(fromTgdfConnection) || [];
     } catch (error) {
       console.error('Error fetching connections:', error);
       throw error;
     }
   },
-
   // Get a specific connection by ID
   async getConnectionById(id) {
     try {
@@ -139,30 +148,37 @@ export const nodeService = {
         throw new Error(`Error: ${response.status}`);
       }
       const data = await response.json();
-      return data.connection;
+      // Convert TGDF connection to standard format
+      return fromTgdfConnection(data.tgdfConnection);
     } catch (error) {
       console.error(`Error fetching connection ${id}:`, error);
       throw error;
     }
   },
-
   // Create a new connection
   async createConnection(sourceId, targetId, options = {}) {
     try {
       const { label, type, description, properties } = options;
+      
+      // Create connection object
+      const connectionData = {
+        source: sourceId,
+        target: targetId,
+        label,
+        type,
+        description,
+        properties
+      };
+      
+      // Convert to TGDF format
+      const tgdfConnection = toTgdfConnection(connectionData);
+      
       const response = await fetch(`${API_BASE_URL}/connections`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          source: sourceId,
-          target: targetId,
-          label,
-          type,
-          description,
-          properties
-        }),
+        body: JSON.stringify(tgdfConnection),
       });
       
       if (!response.ok) {
@@ -170,22 +186,31 @@ export const nodeService = {
       }
       
       const data = await response.json();
-      return data.connection;
+      // Convert TGDF response back to standard format
+      return fromTgdfConnection(data.connection);
     } catch (error) {
       console.error('Error creating connection:', error);
       throw error;
     }
   },
-
   // Update a connection
   async updateConnection(id, updates) {
     try {
+      // Convert updates to TGDF format
+      // First we need to ensure it has the complete connection structure
+      // by getting the current connection and merging with updates
+      const currentConnection = await this.getConnectionById(id);
+      const updatedConnection = { ...currentConnection, ...updates };
+      
+      // Convert to TGDF format
+      const tgdfUpdates = toTgdfConnection(updatedConnection);
+      
       const response = await fetch(`${API_BASE_URL}/connections/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(updates),
+        body: JSON.stringify(tgdfUpdates),
       });
       
       if (!response.ok) {
@@ -193,7 +218,8 @@ export const nodeService = {
       }
       
       const data = await response.json();
-      return data.connection;
+      // Convert TGDF response back to standard format
+      return fromTgdfConnection(data.connection);
     } catch (error) {
       console.error(`Error updating connection ${id}:`, error);
       throw error;

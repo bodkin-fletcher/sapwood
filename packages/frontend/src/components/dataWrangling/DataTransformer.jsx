@@ -153,7 +153,7 @@ export default function DataTransformer({ data, onTransform }) {
         throw new Error('No transformed data to save');
       }
 
-      let result;
+      let result;      // Note: The dataService methods will handle TGDF conversion automatically
       if (data.nodeId) {
         result = await dataService.updateNodeData(data.nodeId, transformedData);
       } else {

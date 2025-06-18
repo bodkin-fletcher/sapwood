@@ -56,11 +56,15 @@ export const NodeProvider = ({ children }) => {
       setLoading(false);
     }
   };
-  
-  const updateNode = async (id, updates) => {
+    const updateNode = async (id, updates) => {
     setLoading(true);
     try {
-      const updatedNode = await nodeService.updateNode(id, updates);
+      // Create a complete node object by merging current node with updates
+      const currentNode = nodes.find(node => node.id === id);
+      const updatedNodeData = { ...currentNode, ...updates };
+      
+      // Use nodeService to update, which handles TGDF conversion
+      const updatedNode = await nodeService.updateNode(id, updatedNodeData);
       
       // Update local state
       const updatedNodes = nodes.map(node => 

@@ -11,329 +11,337 @@ const __dirname = path.dirname(__filename);
 // Path to data storage directory
 const DATA_DIR = path.join(__dirname, '..', '..', 'data');
 
-// Sample data for each node
-const nodeData = {
-  '1': [
-    { id: '101', timestamp: '2025-06-01T12:00:00Z', user: 'user123', action: 'login', status: 'success' },
-    { id: '102', timestamp: '2025-06-01T12:05:23Z', user: 'user456', action: 'query', status: 'success' },
-    { id: '103', timestamp: '2025-06-01T12:10:45Z', user: 'user789', action: 'login', status: 'failed' },
-    { id: '104', timestamp: '2025-06-01T12:15:12Z', user: 'user123', action: 'logout', status: 'success' },
-  ],
-  '2': [
-    { id: '201', name: 'Product A', category: 'Electronics', price: 299.99, inStock: true },
-    { id: '202', name: 'Product B', category: 'Books', price: 24.95, inStock: true },
-    { id: '203', name: 'Product C', category: 'Electronics', price: 149.50, inStock: false },
-    { id: '204', name: 'Product D', category: 'Clothing', price: 49.99, inStock: true },
-  ],
-  '3': [
-    { id: '301', orderId: 'ORD-001', customer: 'Customer A', items: 3, total: 374.93 },
-    { id: '302', orderId: 'ORD-002', customer: 'Customer B', items: 1, total: 24.95 },
-    { id: '303', orderId: 'ORD-003', customer: 'Customer C', items: 2, total: 199.49 },
-  ],
-};
-
-// Sample data for connections
-const connectionData = {};
-
-// Sample validation results
-const validationResults = {};
-
-// Ensure data directory exists
-const ensureDataDir = async () => {
-  try {
-    await fs.mkdir(DATA_DIR, { recursive: true });
-  } catch (err) {
-    console.error('Error creating data directory:', err);
-  }
-};
-
-// Helper to convert JSON to CSV
-const jsonToCSV = (jsonArray) => {
-  if (!Array.isArray(jsonArray) || jsonArray.length === 0) {
-    return '';
-  }
-  
-  const headers = Object.keys(jsonArray[0]);
-  const csvRows = [];
-  
-  // Add headers
-  csvRows.push(headers.join(','));
-  
-  // Add rows
-  for (const row of jsonArray) {
-    const values = headers.map(header => {
-      const value = row[header];
-      // Handle special cases (objects, arrays, null, etc.)
-      if (value === null || value === undefined) return '';
-      if (typeof value === 'object') return JSON.stringify(value);
-      return `"${value}"`;
-    });
-    csvRows.push(values.join(','));
-  }
-  
-  return csvRows.join('\n');
-};
-
-// Helper to perform data transformations
-const transformData = (data, transformType, params) => {
-  if (!Array.isArray(data) || data.length === 0) {
-    return [];
-  }
-  
-  try {
-    switch (transformType) {
-      case 'filter':
-        // Convert string to function
-        const filterFn = new Function('record', `return ${params.condition}`);
-        return data.filter(record => {
-          try {
-            return filterFn(record);
-          } catch (err) {
-            return false;
-          }
-        });
-        
-      case 'map':
-        const mapFn = new Function('record', `return ${params.transformation}`);
-        return data.map(record => {
-          try {
-            return mapFn(record);
-          } catch (err) {
-            return record;
-          }
-        });
-        
-      case 'sort':
-        return [...data].sort((a, b) => {
-          const aValue = a[params.field];
-          const bValue = b[params.field];
-          
-          if (params.direction === 'ascending') {
-            return aValue > bValue ? 1 : -1;
-          } else {
-            return aValue < bValue ? 1 : -1;
-          }
-        });
-        
-      case 'groupBy':
-        const result = {};
-        for (const record of data) {
-          const key = record[params.field];
-          if (!result[key]) {
-            result[key] = [];
-          }
-          result[key].push(record);
-        }
-        // Convert object to array for consistency
-        return Object.entries(result).map(([key, value]) => ({
-          key,
-          items: value,
-          count: value.length
-        }));
-        
-      case 'aggregate':
-        const aggregatedData = {};
-        
-        for (const record of data) {
-          const key = record[params.field];
-          if (!aggregatedData[key]) {
-            aggregatedData[key] = [];
-          }
-          aggregatedData[key].push(record);
-        }
-        
-        return Object.entries(aggregatedData).map(([key, records]) => {
-          let result = { key, count: records.length };
-          
-          if (params.operation === 'sum') {
-            result.sum = records.reduce((sum, record) => sum + (Number(record[params.field]) || 0), 0);
-          } else if (params.operation === 'avg') {
-            result.average = records.reduce((sum, record) => sum + (Number(record[params.field]) || 0), 0) / records.length;
-          } else if (params.operation === 'min') {
-            result.min = Math.min(...records.map(record => Number(record[params.field]) || 0));
-          } else if (params.operation === 'max') {
-            result.max = Math.max(...records.map(record => Number(record[params.field]) || 0));
-          }
-          
-          return result;
-        });
-        
-      case 'custom':
-        // Execute custom code
-        const customFn = new Function('data', params.code);
-        return customFn(data);
-        
-      default:
-        return data;
-    }
-  } catch (err) {
-    console.error(`Error in transformation ${transformType}:`, err);
-    throw new Error(`Transformation failed: ${err.message}`);
-  }
-};
-
-// Helper to validate data
-const validateData = (data, rules) => {
-  if (!Array.isArray(data) || data.length === 0) {
-    return { valid: true, errors: [], warnings: [], recordsChecked: 0 };
-  }
-  
-  const errors = [];
-  const warnings = [];
-  
-  // Sample schema validation based on first record
-  if (rules.includes('schema')) {
-    const firstRecord = data[0];
-    const schemaFields = Object.keys(firstRecord);
-    
-    for (let i = 0; i < data.length; i++) {
-      const record = data[i];
-      const recordFields = Object.keys(record);
-      
-      // Check for missing fields
-      for (const field of schemaFields) {
-        if (!recordFields.includes(field)) {
-          errors.push({
-            recordIndex: i,
-            rule: 'schema',
-            message: `Missing field '${field}' in record`
-          });
-        }
-      }
-      
-      // Check for extra fields (warning only)
-      for (const field of recordFields) {
-        if (!schemaFields.includes(field)) {
-          warnings.push({
-            recordIndex: i,
-            rule: 'schema',
-            message: `Extra field '${field}' found in record`
-          });
-        }
-      }
-    }
-  }
-  
-  // Data type validation
-  if (rules.includes('dataType')) {
-    const firstRecord = data[0];
-    const fieldTypes = {};
-    
-    // Determine expected types from first record
-    for (const field in firstRecord) {
-      fieldTypes[field] = typeof firstRecord[field];
-    }
-    
-    // Validate types in all records
-    for (let i = 0; i < data.length; i++) {
-      const record = data[i];
-      
-      for (const field in record) {
-        if (fieldTypes[field] && typeof record[field] !== fieldTypes[field]) {
-          errors.push({
-            recordIndex: i,
-            rule: 'dataType',
-            message: `Field '${field}' has incorrect type: expected '${fieldTypes[field]}', got '${typeof record[field]}'`
-          });
-        }
-      }
-    }
-  }
-  
-  // Required fields validation
-  if (rules.includes('required')) {
-    // Assume all fields in first record are required
-    const requiredFields = Object.keys(data[0]);
-    
-    for (let i = 0; i < data.length; i++) {
-      const record = data[i];
-      
-      for (const field of requiredFields) {
-        if (record[field] === undefined || record[field] === null || record[field] === '') {
-          errors.push({
-            recordIndex: i,
-            rule: 'required',
-            message: `Required field '${field}' is missing or empty`
-          });
-        }
-      }
-    }
-  }
-  
-  // Value range checks (for numeric fields)
-  if (rules.includes('range')) {
-    for (let i = 0; i < data.length; i++) {
-      const record = data[i];
-      
-      for (const field in record) {
-        const value = record[field];
-        
-        if (typeof value === 'number') {
-          // These are example range checks; in a real application, 
-          // the ranges would be configurable
-          if (isNaN(value)) {
-            errors.push({
-              recordIndex: i,
-              rule: 'range',
-              message: `Field '${field}' contains NaN value`
-            });
-          } else if (value < 0 && field.includes('price')) {
-            errors.push({
-              recordIndex: i,
-              rule: 'range',
-              message: `Field '${field}' has negative value`
-            });
-          }
-        }
-      }
-    }
-  }
-  
-  // Format validation (emails, dates, etc.)
-  if (rules.includes('format')) {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const dateRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(.\d+)?Z$/;
-    
-    for (let i = 0; i < data.length; i++) {
-      const record = data[i];
-      
-      for (const field in record) {
-        const value = record[field];
-        
-        if (typeof value === 'string') {
-          // Check email fields
-          if (field.includes('email') && !emailRegex.test(value)) {
-            errors.push({
-              recordIndex: i,
-              rule: 'format',
-              message: `Field '${field}' contains invalid email format`
-            });
-          }
-          
-          // Check date/timestamp fields
-          if ((field.includes('date') || field.includes('timestamp')) && !dateRegex.test(value)) {
-            warnings.push({
-              recordIndex: i,
-              rule: 'format',
-              message: `Field '${field}' may not be in ISO date format`
-            });
-          }
-        }
-      }
-    }
-  }
-  
-  return {
-    valid: errors.length === 0,
-    errors,
-    warnings,
-    recordsChecked: data.length
-  };
-};
+// TGDF utility imports
+import { 
+  toTgdfRecords, fromTgdfRecords, 
+  toTgdfBasic, fromTgdfBasic,
+  validateTgdfNode
+} from '../utils/tgdf.js';
 
 // Register the data routes
 export default async function registerDataRoutes(fastify) {
+  // Ensure data directory exists
+  const ensureDataDir = async () => {
+    try {
+      await fs.mkdir(DATA_DIR, { recursive: true });
+    } catch (err) {
+      console.error('Error creating data directory:', err);
+    }
+  };
+
   await ensureDataDir();
+
+  // Helper to convert JSON to CSV
+  const jsonToCSV = (jsonArray) => {
+    if (!Array.isArray(jsonArray) || jsonArray.length === 0) {
+      return '';
+    }
+    
+    const headers = Object.keys(jsonArray[0]);
+    const csvRows = [];
+    
+    // Add headers
+    csvRows.push(headers.join(','));
+    
+    // Add rows
+    for (const row of jsonArray) {
+      const values = headers.map(header => {
+        const value = row[header];
+        // Handle special cases (objects, arrays, null, etc.)
+        if (value === null || value === undefined) return '';
+        if (typeof value === 'object') return JSON.stringify(value);
+        return `"${value}"`;
+      });
+      csvRows.push(values.join(','));
+    }
+    
+    return csvRows.join('\n');
+  };
+
+  // Helper to perform data transformations on TGDF data
+  const transformData = (tgdfData, transformType, params) => {
+    if (!Array.isArray(tgdfData) || tgdfData.length === 0) {
+      return [];
+    }
+    
+    try {
+      // Convert TGDF to standard format for transformation
+      const standardData = fromTgdfRecords(tgdfData);
+      let transformedData;
+      
+      switch (transformType) {
+        case 'filter':
+          // Convert string to function
+          const filterFn = new Function('record', `return ${params.condition}`);
+          transformedData = standardData.filter(record => {
+            try {
+              return filterFn(record);
+            } catch (err) {
+              return false;
+            }
+          });
+          break;
+          
+        case 'map':
+          const mapFn = new Function('record', `return ${params.transformation}`);
+          transformedData = standardData.map(record => {
+            try {
+              return mapFn(record);
+            } catch (err) {
+              return record;
+            }
+          });
+          break;
+          
+        case 'sort':
+          transformedData = [...standardData].sort((a, b) => {
+            const aValue = a[params.field];
+            const bValue = b[params.field];
+            
+            if (params.direction === 'ascending') {
+              return aValue > bValue ? 1 : -1;
+            } else {
+              return aValue < bValue ? 1 : -1;
+            }
+          });
+          break;
+          
+        case 'groupBy':
+          const result = {};
+          for (const record of standardData) {
+            const key = record[params.field];
+            if (!result[key]) {
+              result[key] = [];
+            }
+            result[key].push(record);
+          }
+          // Convert object to array for consistency
+          transformedData = Object.entries(result).map(([key, value]) => ({
+            key,
+            items: value,
+            count: value.length
+          }));
+          break;
+          
+        case 'aggregate':
+          const aggregatedData = {};
+          
+          for (const record of standardData) {
+            const key = record[params.field];
+            if (!aggregatedData[key]) {
+              aggregatedData[key] = [];
+            }
+            aggregatedData[key].push(record);
+          }
+          
+          transformedData = Object.entries(aggregatedData).map(([key, records]) => {
+            let result = { key, count: records.length };
+            
+            if (params.operation === 'sum') {
+              result.sum = records.reduce((sum, record) => sum + (Number(record[params.field]) || 0), 0);
+            } else if (params.operation === 'avg') {
+              result.average = records.reduce((sum, record) => sum + (Number(record[params.field]) || 0), 0) / records.length;
+            } else if (params.operation === 'min') {
+              result.min = Math.min(...records.map(record => Number(record[params.field]) || 0));
+            } else if (params.operation === 'max') {
+              result.max = Math.max(...records.map(record => Number(record[params.field]) || 0));
+            }
+            
+            return result;
+          });
+          break;
+          
+        case 'custom':
+          // Execute custom code - provide both standard and TGDF data to the function
+          const customFn = new Function('data', 'tgdfData', params.code);
+          transformedData = customFn(standardData, tgdfData);
+          break;
+          
+        default:
+          transformedData = standardData;
+      }
+      
+      // For operations that don't return records (e.g., groupBy, aggregate), 
+      // we'll return as-is without converting back to TGDF
+      if (transformType === 'groupBy' || transformType === 'aggregate') {
+        return transformedData;
+      }
+      
+      // Convert results back to TGDF format
+      return toTgdfRecords(transformedData);
+      
+    } catch (error) {
+      console.error('Error during transformation:', error);
+      return [];
+    }
+  };
+
+  // Helper to validate data
+  const validateData = (data, rules) => {
+    if (!Array.isArray(data) || data.length === 0) {
+      return { 
+        valid: false,
+        errors: ['No data to validate'],
+        warnings: []
+      };
+    }
+    
+    const validationParams = {
+      validRecords: [],
+      invalidRecords: [],
+      errors: [],
+      warnings: []
+    };
+    
+    // Apply each validation rule
+    for (const rule of rules) {
+      switch (rule) {
+        case 'schema':
+          // Schema validation - ensure all records have the same fields
+          const firstRecordKeys = Object.keys(data[0]).sort().join(',');
+          data.forEach((record, index) => {
+            const recordKeys = Object.keys(record).sort().join(',');
+            if (recordKeys !== firstRecordKeys) {
+              validationParams.errors.push(`Record at index ${index} has different schema`);
+              validationParams.invalidRecords.push(record);
+            }
+          });
+          break;
+          
+        case 'dataType':
+          // Data type validation - ensure values match expected types
+          data.forEach((record, index) => {
+            let isValid = true;
+            Object.entries(record).forEach(([key, value]) => {
+              // Check first record for type reference
+              const firstValue = data[0][key];
+              if (typeof value !== typeof firstValue) {
+                validationParams.errors.push(
+                  `Record at index ${index}: field "${key}" should be ${typeof firstValue} but got ${typeof value}`
+                );
+                isValid = false;
+              }
+            });
+            if (!isValid && !validationParams.invalidRecords.includes(record)) {
+              validationParams.invalidRecords.push(record);
+            }
+          });
+          break;
+          
+        case 'required':
+          // Required fields validation - ensure no null/empty values
+          const requiredFields = Object.keys(data[0]);
+          data.forEach((record, index) => {
+            let isValid = true;
+            requiredFields.forEach(field => {
+              if (record[field] === null || record[field] === undefined || record[field] === '') {
+                validationParams.errors.push(`Record at index ${index}: field "${field}" is required`);
+                isValid = false;
+              }
+            });
+            if (!isValid && !validationParams.invalidRecords.includes(record)) {
+              validationParams.invalidRecords.push(record);
+            }
+          });
+          break;
+          
+        case 'range':
+          // Range validation for numeric fields
+          data.forEach((record, index) => {
+            let isValid = true;
+            Object.entries(record).forEach(([key, value]) => {
+              if (typeof value === 'number') {
+                // Simple range check (more sophisticated rules could be applied)
+                if (value < -1000000 || value > 1000000) {
+                  validationParams.warnings.push(
+                    `Record at index ${index}: field "${key}" value ${value} is outside normal range`
+                  );
+                  isValid = false;
+                }
+              }
+            });
+            if (!isValid && !validationParams.invalidRecords.includes(record)) {
+              validationParams.invalidRecords.push(record);
+            }
+          });
+          break;
+          
+        case 'format':
+          // Format validation (email, dates, etc.)
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          const dateRegex = /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})?)?$/;
+          
+          data.forEach((record, index) => {
+            let isValid = true;
+            Object.entries(record).forEach(([key, value]) => {
+              if (typeof value === 'string') {
+                // Email validation
+                if (key.includes('email') && !emailRegex.test(value)) {
+                  validationParams.errors.push(
+                    `Record at index ${index}: field "${key}" is not a valid email`
+                  );
+                  isValid = false;
+                }
+                
+                // Date validation
+                if ((key.includes('date') || key.includes('time')) && !dateRegex.test(value)) {
+                  validationParams.errors.push(
+                    `Record at index ${index}: field "${key}" is not a valid date/time format`
+                  );
+                  isValid = false;
+                }
+              }
+            });
+            if (!isValid && !validationParams.invalidRecords.includes(record)) {
+              validationParams.invalidRecords.push(record);
+            }
+          });
+          break;
+      }
+    }
+    
+    // Add valid records (those not in invalidRecords)
+    validationParams.validRecords = data.filter(record => !validationParams.invalidRecords.includes(record));
+    
+    return {
+      valid: validationParams.errors.length === 0,
+      ...validationParams
+    };
+  };
+
+  // Standard data format for each node
+  const standardNodeData = {
+    '1': [
+      { id: '101', timestamp: '2025-06-01T12:00:00Z', user: 'user123', action: 'login', status: 'success' },
+      { id: '102', timestamp: '2025-06-01T12:05:23Z', user: 'user456', action: 'query', status: 'success' },
+      { id: '103', timestamp: '2025-06-01T12:10:45Z', user: 'user789', action: 'login', status: 'failed' },
+      { id: '104', timestamp: '2025-06-01T12:15:12Z', user: 'user123', action: 'logout', status: 'success' },
+    ],
+    '2': [
+      { id: '201', name: 'Product A', category: 'Electronics', price: 299.99, inStock: true },
+      { id: '202', name: 'Product B', category: 'Books', price: 24.95, inStock: true },
+      { id: '203', name: 'Product C', category: 'Electronics', price: 149.50, inStock: false },
+      { id: '204', name: 'Product D', category: 'Clothing', price: 49.99, inStock: true },
+    ],
+    '3': [
+      { id: '301', orderId: 'ORD-001', customer: 'Customer A', items: 3, total: 374.93 },
+      { id: '302', orderId: 'ORD-002', customer: 'Customer B', items: 1, total: 24.95 },
+      { id: '303', orderId: 'ORD-003', customer: 'Customer C', items: 2, total: 199.49 },
+    ],
+  };
+
+  // Convert to TGDF format
+  const nodeData = {};
+  Object.entries(standardNodeData).forEach(([nodeId, records]) => {
+    nodeData[nodeId] = toTgdfRecords(records);
+  });
+
+  // Sample data for connections (empty for now, connections can have data added via API)
+  const standardConnectionData = {};
+  const connectionData = {};
+
+  // Sample validation results
+  const validationResults = {};
 
   // Get data flow snapshot
   fastify.get('/api/data/flow', async (request, reply) => {
@@ -350,27 +358,33 @@ export default async function registerDataRoutes(fastify) {
             sourceName: `Node ${nodeId}`,
             targetId: targetId,
             targetName: `Node ${targetId}`,
-            dataType: 'JSON',
             status: Math.random() > 0.3 ? 'active' : 'inactive',
-            lastUpdated: new Date().toISOString()
+            dataType: 'JSON',
+            recordCount: Math.floor(Math.random() * 100) + 1,
+            lastUpdated: new Date(Date.now() - Math.random() * 86400000).toISOString()
           });
         }
       }
       
-      // Node summaries
-      const nodeSummaries = ['1', '2', '3'].map(id => ({
-        id,
-        name: `Node ${id}`,
-        type: ['gateway', 'storage', 'service'][parseInt(id) - 1],
-        inputCount: Math.floor(Math.random() * 20) + 1,
-        outputCount: Math.floor(Math.random() * 20) + 1,
-        lastActivity: new Date().toISOString()
-      }));
+      // Generate node summaries
+      const nodeSummaries = [];
+      for (const nodeId in nodeData) {
+        nodeSummaries.push({
+          id: nodeId,
+          name: `Node ${nodeId}`,
+          type: ['API', 'Database', 'Processing'][nodeId - 1],
+          status: Math.random() > 0.2 ? 'active' : 'inactive',
+          inputCount: Math.floor(Math.random() * 50) + 1,
+          outputCount: Math.floor(Math.random() * 100) + 1,
+          lastUpdated: new Date(Date.now() - Math.random() * 86400000).toISOString()
+        });
+      }
       
       return {
         flows,
         nodeSummaries,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        dataFormat: 'TGDF'
       };
     } catch (error) {
       console.error('Error getting data flow snapshot:', error);
@@ -389,17 +403,21 @@ export default async function registerDataRoutes(fastify) {
         return reply.code(404).send({ error: `Node with ID ${id} not found` });
       }
       
-      // Get node data
-      const data = nodeData[id] || [];
+      // Get node data in TGDF format
+      const tgdfData = nodeData[id] || [];
       
-      // Generate CSV
-      const csvContent = jsonToCSV(data);
+      // Convert to standard format for frontend display
+      const standardData = fromTgdfRecords(tgdfData);
+      
+      // Generate CSV from standard data
+      const csvContent = jsonToCSV(standardData);
       
       return {
         nodeId: id,
         nodeName: node.name,
         format: 'JSON',
-        records: data,
+        tgdfRecords: tgdfData,  // Include raw TGDF data
+        records: standardData,  // Include converted standard data
         csvContent,
         lastUpdated: new Date().toISOString()
       };
@@ -424,18 +442,26 @@ export default async function registerDataRoutes(fastify) {
       if (!connectionData[id]) {
         // Sample data based on source node
         const sourceData = nodeData[connection.source] || [];
-        // Create derived data for the connection
-        connectionData[id] = sourceData.map(item => ({
+        
+        // Create standard format data first
+        const standardData = fromTgdfRecords(sourceData).map(item => ({
           ...item,
           processedAt: new Date().toISOString(),
           connectionId: id
         }));
+        
+        // Convert to TGDF format for storage
+        connectionData[id] = toTgdfRecords(standardData);
       }
       
-      const data = connectionData[id];
+      // Get TGDF data
+      const tgdfData = connectionData[id];
       
-      // Generate CSV
-      const csvContent = jsonToCSV(data);
+      // Convert to standard format for frontend display
+      const standardData = fromTgdfRecords(tgdfData);
+      
+      // Generate CSV from standard data
+      const csvContent = jsonToCSV(standardData);
       
       const sourceNode = fastify.nodes.find(n => n.id === connection.source);
       const targetNode = fastify.nodes.find(n => n.id === connection.target);
@@ -447,7 +473,8 @@ export default async function registerDataRoutes(fastify) {
         sourceName: sourceNode?.name || 'Unknown',
         targetName: targetNode?.name || 'Unknown',
         format: 'JSON',
-        records: data,
+        tgdfRecords: tgdfData,  // Include raw TGDF data
+        records: standardData,  // Include converted standard data
         csvContent,
         lastUpdated: new Date().toISOString()
       };
@@ -461,23 +488,19 @@ export default async function registerDataRoutes(fastify) {
   fastify.put('/api/data/nodes/:id', async (request, reply) => {
     try {
       const { id } = request.params;
-      const { data } = request.body;
+      const { records } = request.body;
       
-      if (!data || !Array.isArray(data)) {
-        return reply.code(400).send({ error: 'Invalid data format. Expected array.' });
+      if (!records || !Array.isArray(records)) {
+        return reply.code(400).send({ error: 'Invalid request. Missing or invalid records.' });
       }
       
       // Update node data
-      nodeData[id] = data;
+      nodeData[id] = records; // Records should be in TGDF format already
       
-      // Persist to file
-      const filePath = path.join(DATA_DIR, `node_${id}.json`);
-      await fs.writeFile(filePath, JSON.stringify(data, null, 2));
-      
-      return {
+      return { 
         success: true,
-        nodeId: id,
-        message: 'Node data updated successfully'
+        message: `Data for node ${id} updated successfully`,
+        count: records.length
       };
     } catch (error) {
       console.error(`Error updating data for node ${request.params.id}:`, error);
@@ -489,23 +512,19 @@ export default async function registerDataRoutes(fastify) {
   fastify.put('/api/data/connections/:id', async (request, reply) => {
     try {
       const { id } = request.params;
-      const { data } = request.body;
+      const { records } = request.body;
       
-      if (!data || !Array.isArray(data)) {
-        return reply.code(400).send({ error: 'Invalid data format. Expected array.' });
+      if (!records || !Array.isArray(records)) {
+        return reply.code(400).send({ error: 'Invalid request. Missing or invalid records.' });
       }
       
       // Update connection data
-      connectionData[id] = data;
+      connectionData[id] = records; // Records should be in TGDF format already
       
-      // Persist to file
-      const filePath = path.join(DATA_DIR, `connection_${id}.json`);
-      await fs.writeFile(filePath, JSON.stringify(data, null, 2));
-      
-      return {
+      return { 
         success: true,
-        connectionId: id,
-        message: 'Connection data updated successfully'
+        message: `Data for connection ${id} updated successfully`,
+        count: records.length
       };
     } catch (error) {
       console.error(`Error updating data for connection ${request.params.id}:`, error);
@@ -518,15 +537,30 @@ export default async function registerDataRoutes(fastify) {
     try {
       const { type, params, data, sourceId } = request.body;
       
-      if (!type || !params || !data || !Array.isArray(data)) {
+      if (!type || !params || !data) {
         return reply.code(400).send({ error: 'Invalid request. Missing required parameters.' });
       }
       
-      // Transform the data
-      const transformedData = transformData(data, type, params);
+      // Convert input to TGDF format if it's not already (frontend might or might not send TGDF)
+      let tgdfInputData;
+      
+      if (data[0] && data[0].record) {
+        // Data is already in TGDF format
+        tgdfInputData = data;
+      } else {
+        // Convert to TGDF format
+        tgdfInputData = toTgdfRecords(data);
+      }
+      
+      // Transform the TGDF data
+      const transformedTgdfData = transformData(tgdfInputData, type, params);
+      
+      // Convert transformed data back to standard format for the frontend
+      const standardTransformedData = fromTgdfRecords(transformedTgdfData);
       
       return {
-        transformedData,
+        transformedData: standardTransformedData,
+        tgdfTransformedData: transformedTgdfData, // Include raw TGDF data
         transformType: type,
         sourceId
       };
@@ -541,12 +575,63 @@ export default async function registerDataRoutes(fastify) {
     try {
       const { rules, data, sourceId } = request.body;
       
-      if (!rules || !data || !Array.isArray(data)) {
+      if (!rules || !data) {
         return reply.code(400).send({ error: 'Invalid request. Missing required parameters.' });
       }
       
-      // Validate the data
-      const results = validateData(data, rules);
+      // Convert input to TGDF format if it's not already
+      let tgdfInputData;
+      if (data[0] && data[0].record) {
+        // Data is already in TGDF format
+        tgdfInputData = data;
+      } else {
+        // Convert to TGDF format
+        tgdfInputData = toTgdfRecords(data);
+      }
+      
+      // First validate TGDF format compliance
+      let tgdfResults = null;
+      if (rules.includes('tgdf')) {
+        // Validate TGDF format using the TGDF validation functions
+        const validationParams = {
+          validRecords: [],
+          invalidRecords: [],
+          errors: [],
+          warnings: []
+        };
+        
+        // Validate each record
+        tgdfInputData.forEach((record, index) => {
+          // Use validateTgdfRecord function if it's available
+          // For now we'll do some basic checks
+          if (!record.record || !record.record.data || !record.record.data.identityHash) {
+            validationParams.errors.push(`Record at index ${index} is missing required TGDF structure`);
+            validationParams.invalidRecords.push(record);
+          } else {
+            validationParams.validRecords.push(record);
+          }
+        });
+        
+        tgdfResults = {
+          valid: validationParams.errors.length === 0,
+          ...validationParams
+        };
+      }
+      
+      // Validate the data for other rules using standard format
+      const standardData = fromTgdfRecords(tgdfInputData);
+      const standardResults = validateData(standardData, rules.filter(r => r !== 'tgdf'));
+      
+      // Combine TGDF validation with standard validation
+      const results = tgdfResults ? {
+        valid: tgdfResults.valid && standardResults.valid,
+        errors: [...(tgdfResults.errors || []), ...(standardResults.errors || [])],
+        warnings: [...(tgdfResults.warnings || []), ...(standardResults.warnings || [])],
+        tgdfValidation: tgdfResults,
+        standardValidation: standardResults,
+        records: standardData,
+        tgdfRecords: tgdfInputData
+      } : standardResults;
       
       // Store validation results
       validationResults[sourceId] = {
@@ -577,14 +662,15 @@ export default async function registerDataRoutes(fastify) {
         timestamp: new Date().toISOString()
       };
       
-      // Persist to file
+      // Save to file
       const filePath = path.join(DATA_DIR, `validation_${sourceId}.json`);
-      await fs.writeFile(filePath, JSON.stringify(validationResults[sourceId], null, 2));
+      await fs.writeFile(
+        filePath,
+        JSON.stringify(validationResults[sourceId], null, 2)
+      );
       
       return {
         success: true,
-        sourceId,
-        sourceType,
         message: 'Validation results saved successfully'
       };
     } catch (error) {
@@ -596,25 +682,16 @@ export default async function registerDataRoutes(fastify) {
   // Export data to CSV
   fastify.post('/api/data/export/csv', async (request, reply) => {
     try {
-      const { id, type } = request.body;
+      const { records, type, id, filename } = request.body;
       
-      if (!id || !type) {
-        return reply.code(400).send({ error: 'Invalid request. Missing required parameters.' });
+      if (!records || !Array.isArray(records)) {
+        return reply.code(400).send({ error: 'Invalid request. Missing or invalid records.' });
       }
       
-      let data;
-      if (type === 'node') {
-        data = nodeData[id] || [];
-      } else if (type === 'connection') {
-        data = connectionData[id] || [];
-      } else {
-        return reply.code(400).send({ error: 'Invalid type. Must be "node" or "connection".' });
-      }
+      // Convert records to CSV
+      const csvContent = jsonToCSV(records);
       
-      // Generate CSV
-      const csvContent = jsonToCSV(data);
-      
-      // Save CSV file
+      // Save to file
       const filePath = path.join(DATA_DIR, `${type}_${id}_export.csv`);
       await fs.writeFile(filePath, csvContent);
       
