@@ -55,18 +55,18 @@ This roadmap outlines the major development steps required to transform the curr
 
 **Milestone:** Users can reliably connect to external services and monitor system health.
 
-## 5. Layout & Export Capabilities (Sprint 5)
+## 5. Layout & Export Capabilities (Sprint 5) ✅ COMPLETED
 
 **Usable Functionality:** Generate visual layouts and export data
 
-- Create SVG-based layout editor sized for paper output
-- Implement export capabilities (SVG, PDF)
-- Add print layout preview functionality
-- Enhance data export options (JSON, CSV)
-- Implement simple template system for layouts
-- Add node grouping functionality for organization
+- ✅ Create SVG-based layout editor sized for paper output
+- ✅ Implement export capabilities (SVG, PDF, PNG)
+- ✅ Add print layout preview functionality
+- ✅ Enhance data export options (JSON, CSV)
+- ✅ Implement template system for layouts with multiple algorithms
+- ✅ Add node grouping functionality for organization
 
-**Milestone:** Users can generate professional layouts and export both data and visualizations.
+**Milestone Achieved:** Users can generate professional layouts and export both data and visualizations in multiple formats.
 
 ## 6. Advanced Data Processing (Sprint 6)
 

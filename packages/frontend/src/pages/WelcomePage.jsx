@@ -76,8 +76,7 @@ const WelcomePage = () => {
           </Paper>
         </Grid>
 
-        <Grid item xs={12} md={6} lg={3}>
-          <Paper 
+        <Grid item xs={12} md={6} lg={3}>          <Paper 
             component={Link} 
             to="/layout" 
             sx={{ 
@@ -88,8 +87,7 @@ const WelcomePage = () => {
               alignItems: 'center',
               textAlign: 'center',
               textDecoration: 'none',
-              color: 'text.secondary',
-              bgcolor: 'background.default',
+              color: 'text.primary',
               transition: 'transform 0.2s, box-shadow 0.2s',
               '&:hover': {
                 transform: 'translateY(-5px)',
@@ -97,15 +95,14 @@ const WelcomePage = () => {
               }
             }}
           >
-            <PrintIcon sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }} />
+            <PrintIcon sx={{ fontSize: 60, color: 'primary.main', mb: 2 }} />
             <Typography variant="h5" component="h2" gutterBottom>
               Layout Display
-            </Typography>
-            <Typography variant="body1">
-              Generate printable SVG layouts for nodes and connections (Coming in Sprint 5)
+            </Typography>            <Typography variant="body1">
+              Create visual layouts and export as SVG, PDF, PNG, JSON, or CSV
             </Typography>
             <Box sx={{ mt: 2 }}>
-              <Button variant="outlined" disabled>Coming Soon</Button>
+              <Button variant="outlined" component={Link} to="/layout">View Layouts</Button>
             </Box>
           </Paper>
         </Grid>

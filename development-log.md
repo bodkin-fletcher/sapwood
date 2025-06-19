@@ -273,6 +273,83 @@ The data wrangling features provide a solid foundation for users to work with da
 
 Sapwood's monitoring capabilities are now significantly enhanced, providing users with deeper insights into their system's health and performance. The retry mechanisms make the system more resilient to temporary failures, and the comprehensive metrics help identify patterns and potential issues.
 
+## Sprint 5: Layout & Export Capabilities
+
+### Overview
+Sprint 5 focused on implementing layout and export capabilities, allowing users to visually arrange nodes and export their layouts in various formats. This enables better organization, documentation, and sharing of node arrangements.
+
+### Layout Editor Features
+
+#### Interactive Node Arrangement
+- **Feature**: Implemented a comprehensive layout editor with interactive node positioning.
+- **Implementation**: Created an SVG-based canvas with drag-and-drop functionality for node arrangement.
+- **User Experience**: Seamless node dragging with position saving.
+
+#### Grid System & Snapping
+- **Feature**: Added a configurable grid system with snapping functionality.
+- **Implementation**: Positions are automatically aligned to the nearest grid point when grid is enabled.
+- **Technical Details**: Grid size is configurable and is calculated based on the zoom level.
+
+#### Layout Templates
+- **Feature**: Created multiple layout algorithms for automatic node arrangement:
+  - **Grid Layout**: Simple row/column arrangement
+  - **Circular Layout**: Nodes arranged in a circle
+  - **Hierarchical Layout**: Tree-like structure based on connections
+  - **Force-Directed Layout**: Physics-based arrangement for organic layouts
+- **Implementation**: Each template includes a specialized algorithm for calculating optimal node positions.
+
+#### Node Grouping
+- **Feature**: Implemented the ability to create logical groups of nodes.
+- **UI**: Groups are visually represented with a colored background and label.
+- **Management**: Groups can be created, edited, and deleted through a dedicated dialog.
+- **Applications**: Helps organize large node arrangements by functional area or purpose.
+
+### Export Capabilities
+
+#### Multiple Export Formats
+- **Feature**: Implemented export functionality in various formats:
+  - **SVG**: Vector graphics export with full fidelity
+  - **PDF**: Document export using jsPDF with proper scaling and orientation
+  - **PNG**: Raster image export with background and proper resolution
+  - **JSON**: Complete data structure export with node and connection information
+  - **CSV**: Tabular data export packaged in a ZIP file
+- **Technical Implementation**: Used specialized libraries for each format (jsPDF, JSZip, PapaParse)
+
+#### Print & Preview Support
+- **Feature**: Added a dedicated preview mode for layouts.
+- **Implementation**: Preview shows the layout exactly as it will appear when exported or printed.
+- **Paper Support**: Implemented standard paper sizes (A4, Letter, Legal, A3) and orientations.
+
+#### Export Controls
+- **Feature**: Added a comprehensive export toolbar with format options.
+- **Implementation**: Each export format has specific options and settings.
+- **User Experience**: Simple one-click export after selecting format and options.
+
+### Technical Implementation
+
+#### Dynamic Library Loading
+- **Approach**: Used dynamic imports for large libraries (jsPDF, JSZip).
+- **Rationale**: Improves initial load performance by only loading export libraries when needed.
+
+#### SVG Rendering Engine
+- **Feature**: Created a sophisticated SVG generator for layout rendering.
+- **Implementation**: Handles node placement, connections, groups, and visual styling.
+- **Technical Details**: Supports various paper sizes and orientations with proper scaling.
+
+#### Export Error Handling
+- **Feature**: Implemented robust error handling for export operations.
+- **Implementation**: Added fallback mechanisms when primary export methods fail.
+- **User Experience**: Meaningful error messages with suggested alternatives.
+
+### Sprint 5 Completion
+We have successfully completed all planned layout and export capabilities for Sprint 5. The implementation provides a solid foundation for users to visually organize their node arrangements and share them in various formats.
+
+### Next Steps
+- Enhance force-directed layout with a more sophisticated physics simulation
+- Add more customization options for templates and exports
+- Implement template saving and sharing features
+- Collect user feedback on export quality and layout usability
+
 ## Conclusion
 
 Sapwood's design aims to balance visual simplicity with powerful functionality, allowing users to represent and interact with distributed systems in an intuitive way. The UI decisions prioritize clarity and usability, while the architectural choices focus on flexibility and maintainability.

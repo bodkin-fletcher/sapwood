@@ -18,6 +18,7 @@ import SettingsPage from './pages/SettingsPage'
 import WelcomePage from './pages/WelcomePage'
 import DataWranglingPage from './pages/DataWranglingPage'
 import MonitoringPage from './pages/MonitoringPage'
+import LayoutPage from './pages/LayoutPage'
 
 const drawerWidth = 240;
 
@@ -133,17 +134,7 @@ function App() {
               <Route path="/nodes" element={<NodeDisplayPage />} />
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="/data" element={<DataWranglingPage />} />
-              <Route path="/monitoring" element={<MonitoringPage />} />
-              <Route path="/layout" element={
-                <Container>
-                  <Typography variant="h4" gutterBottom>
-                    Layout Display
-                  </Typography>
-                  <Typography variant="body1">
-                    This feature will be implemented in Sprint 5.
-                  </Typography>
-                </Container>
-              } />
+              <Route path="/monitoring" element={<MonitoringPage />} />              <Route path="/layout" element={<LayoutPage />} />
             </Routes></Box>
         </Box>
       </SettingsProvider>
