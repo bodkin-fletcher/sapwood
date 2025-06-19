@@ -7,6 +7,7 @@ import { fileURLToPath } from 'url';
 import registerNodeRoutes from './routes/nodes.js';
 import registerSettingsRoutes from './routes/settings.js';
 import registerDataRoutes from './routes/data.js';
+import registerExternalNodeApiRoutes from './routes/external-node-api.js';
 
 // Workaround for __dirname in ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -37,6 +38,7 @@ fastify.get('/api/health', async (request, reply) => {
 await registerNodeRoutes(fastify);
 await registerSettingsRoutes(fastify);
 await registerDataRoutes(fastify);
+await registerExternalNodeApiRoutes(fastify);
 
 // Handle SPA routing - send all non-API requests to index.html
 fastify.setNotFoundHandler((request, reply) => {
@@ -44,7 +46,7 @@ fastify.setNotFoundHandler((request, reply) => {
   if (request.method === 'GET' && !request.url.startsWith('/api')) {
     return reply.sendFile('index.html');
   }
-  
+
   // Default 404 handler
   reply.code(404).send({ error: 'Not Found' });
 });

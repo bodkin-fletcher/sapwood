@@ -1,5 +1,6 @@
 // Utility functions for working with nodes and their connections
 import { nodeService } from './api';
+import { externalNodeApi } from './externalNodeApi';
 
 // Generate a unique ID for temporary nodes or connections
 export const generateTempId = () => `temp-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
