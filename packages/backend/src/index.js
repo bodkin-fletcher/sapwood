@@ -8,6 +8,7 @@ import registerNodeRoutes from './routes/nodes.js';
 import registerSettingsRoutes from './routes/settings.js';
 import registerDataRoutes from './routes/data.js';
 import registerExternalNodeApiRoutes from './routes/external-node-api.js';
+import registerNodeApiProxyRoutes from './routes/node-proxy.js';
 
 // Workaround for __dirname in ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -39,6 +40,7 @@ await registerNodeRoutes(fastify);
 await registerSettingsRoutes(fastify);
 await registerDataRoutes(fastify);
 await registerExternalNodeApiRoutes(fastify);
+await registerNodeApiProxyRoutes(fastify);
 
 // Handle SPA routing - send all non-API requests to index.html
 fastify.setNotFoundHandler((request, reply) => {

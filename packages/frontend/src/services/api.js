@@ -3,7 +3,8 @@ import {
   toTgdfNode, toTgdfConnection, fromTgdfNode, fromTgdfConnection 
 } from './tgdf';
 
-const API_BASE_URL = 'http://localhost:8080/api';
+// Base URL for API requests - export it so other services can use it
+export const API_BASE_URL = 'http://localhost:8080/api';
 
 export const nodeService = {  // Get all nodes
   async getAllNodes() {
